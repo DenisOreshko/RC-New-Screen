@@ -1,0 +1,889 @@
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE MENU
+OBJECT MODULE PLACED IN .\Objects\Menu.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE Menu.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Li
+                    -stings\Menu.lst) TABS(2) OBJECT(.\Objects\Menu.obj)
+
+line level    source
+
+   1          #include <FontDisplay.h>
+   2          #include <DeviceParameters.h>
+   3          #include <BigFont.h>
+   4          #include <MiddleFont.h>
+   5          #include <Display.h>
+   6          #include <Delays.h>
+   7          #include <math.h>
+   8          #include <stdio.h>
+   9          #include <UART0.h>
+  10          int INDEX_MENU = 11;
+  11          int A = 0;
+  12          xdata unsigned char showOneTimeFREQ = 1;
+  13          xdata unsigned char showOneTime_RC_SOFT_VERS = 1;
+  14          xdata unsigned char needClearMainDisplay = 0;
+  15          xdata unsigned char needClearUserMenuDisplay = 0;
+  16          xdata unsigned char needClearSelectMenuDisplay = 0;
+  17          xdata unsigned char needClearWorkTimeShotsDisplay = 1;
+  18          xdata unsigned char needClearRC_Menu_Display = 1;
+  19          xdata unsigned int lenght_time_hour_str = 0;
+  20          xdata unsigned int lenght_time_min_str = 0;
+  21          xdata unsigned long int time_hour = 0;
+  22          xdata unsigned long int time_min = 0;
+  23          xdata char time_hour_str[10] = {0};
+  24          xdata char time_min_str[3] = {0};
+  25          xdata char flash_number_str[12] = {0};
+  26          xdata unsigned int lenght_flash_number_str = 0;
+  27          xdata unsigned char str_CAPACITOR_V[5]={0};
+  28          xdata unsigned short int lenght_CAPACITOR_V = 0;
+  29          xdata unsigned char str_SET_VOLTAGE[5]={0};
+  30          xdata unsigned short int lenght_SET_VOLTAGE = 0;
+  31          xdata unsigned char str_U_PERCENT[5] = {0};
+  32          xdata unsigned short int lenght_U_PERCENT = 0;
+  33          xdata unsigned char str_PULS_LONGNESS[5] = {0};
+  34          xdata unsigned short int lenght_PULS_LONGNESS = 0;
+  35          
+  36          void write_5x7ASCII_String(const unsigned char* arr, int arr_size, unsigned char col, unsigned char row, u
+             -nsigned char brightness){
+  37   1        int i;
+  38   1        for(i = 0; i < arr_size; i++){
+  39   2          put_5x7ASCII_CharOnDisplay(arr[i], col, row, brightness);
+  40   2          col+=2.0;
+  41   2        }
+  42   1      }
+  43          
+  44          void write_8x16ASCII_String(const unsigned char* arr, int arr_size, unsigned char col, unsigned char row, 
+             -unsigned char brightness){
+  45   1        int i;
+  46   1        for(i = 0; i < arr_size; i++){
+  47   2          put_8x16ASCII_CharOnDisplay(arr[i], col, row, brightness);
+  48   2          col+=2.0;
+  49   2        }
+  50   1      }
+  51          void write_WidthAdjusted_Arial_ASCII_String(const unsigned char* arr, int arr_size, unsigned char col, uns
+             -igned char row){
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 2   
+
+  52   1        int i;  
+  53   1        for(i = 0; i < arr_size; i++){
+  54   2          put_WidthAdjusted_Arial_ASCII_CharOnDisplay(arr[i], col, row);
+  55   2          switch(arr[i]){
+  56   3            case 'f': col+=2.0; break;
+  57   3            case 'i': col+=2.0; break;
+  58   3            case 'j': col+=2.0; break;
+  59   3            case 'l': col+=2.0; break;
+  60   3            case 'm': col+=4.0; break;
+  61   3            case 'r': col+=2.0; break;
+  62   3            case 't': col+=2.0; break;
+  63   3            case 'w': col+=4.0; break;
+  64   3            case 'W': col+=4.0; break;
+  65   3            default : col+=3.0; break;
+  66   3          }
+  67   2        }
+  68   1      }
+  69          void swingToEndArr(unsigned char *arr, unsigned short int lenght_arr, unsigned short int lenght_number){
+  70   1        int i = 0,j = 0;
+  71   1        for(i = 0; i < lenght_arr-lenght_number; i++){  
+  72   2          arr[4] = arr[3];
+  73   2          arr[3] = arr[2];
+  74   2          arr[2] = arr[1];
+  75   2          arr[1] = arr[0];  
+  76   2          
+  77   2          arr[0] = ' ';
+  78   2        } 
+  79   1      }
+  80          
+  81          
+  82          void resetTempParam(){
+  83   1        switch(INDEX_MENU){
+  84   2          case 10:temp_RADIATION1 = 0;
+  85   2                  temp_RADIATION2 = 0;
+  86   2                  break;
+  87   2          case 11:temp_RADIATION1 = 0;
+  88   2                  temp_RADIATION2 = 0;
+  89   2                  showOneTimeFREQ = 1;
+  90   2                  break;
+  91   2          case 12:temp_ENERGY = 0;
+  92   2                  temp_RADIATION2 = 0;
+  93   2                  break;
+  94   2          case 13:temp_ENERGY = 0;
+  95   2                  temp_RADIATION1 = 0;
+  96   2                  break;
+  97   2          case 20:temp_ENERGY = 0;
+  98   2                  temp_DELAY1 = 0;
+  99   2                  temp_DELAY2 = 0;
+ 100   2                  break;
+ 101   2          case 21:temp_ENERGY = 0;
+ 102   2                  temp_DELAY1 = 0;
+ 103   2                  temp_DELAY2 = 0;
+ 104   2                  showOneTimeFREQ = 1;
+ 105   2                  break;
+ 106   2          case 22:temp_ENERGY = 0;
+ 107   2                  showOneTimeFREQ = 1;
+ 108   2                  temp_DELAY1 = 0;
+ 109   2                  temp_DELAY2 = 0;
+ 110   2                  break;
+ 111   2          case 23:temp_ENERGY = 0;
+ 112   2                  showOneTimeFREQ = 1;
+ 113   2                  temp_DELAY1 = 0;
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 3   
+
+ 114   2                  temp_DELAY2 = 0;
+ 115   2                  temp_QSW_SHOTS = 0;
+ 116   2                  break;
+ 117   2          case 24:temp_ENERGY = 0;
+ 118   2                  showOneTimeFREQ = 1;
+ 119   2                  temp_DELAY2 = 0;
+ 120   2                  break;
+ 121   2          case 25:temp_ENERGY = 0;
+ 122   2                  showOneTimeFREQ = 1;
+ 123   2                  temp_DELAY1 = 0;
+ 124   2                  break;
+ 125   2          case 26:temp_ENERGY = 0;
+ 126   2                  showOneTimeFREQ = 1;
+ 127   2                  temp_DELAY1 = 0;
+ 128   2                  temp_DELAY2 = 0;
+ 129   2                  break;
+ 130   2          case 30:temp_ENERGY = 0;break;
+ 131   2          case 31:temp_ENERGY = 0;break;
+ 132   2          case 32:temp_ENERGY = 0;break;
+ 133   2          case 33:temp_ENERGY = 0;break;
+ 134   2          case 34:temp_ENERGY = 0;break;
+ 135   2          case 42:temp_ENERGY_MAX = 0;break;
+ 136   2          case 43:temp_LAMP_FREQ_MAX = 0;break;
+ 137   2          case 44:temp_ENERGY_RAD1_MAX = 0;break;
+ 138   2          case 50:temp_MESSAGE_SOUND_MODE = 0;
+ 139   2                  temp_BUTTON_SOUND_MODE = 0;
+ 140   2                  temp_DISPLAY_MODE = 0;
+ 141   2                  temp_ERROR_DISPLAY_MODE = 0;
+ 142   2                  break;
+ 143   2          default:break;
+ 144   2        }
+ 145   1      }
+ 146          
+ 147          void updateMenu(){
+ 148   1        
+ 149   1        if(A != INDEX_MENU){
+ 150   2          A = INDEX_MENU;
+ 151   2          switch(A){
+ 152   3            case 10://write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 153   3                    //write_5x7ASCII_String("MAIN MENU",9,0x40, 0x01, 0x0F);
+ 154   3                    //write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);
+ 155   3                    write_8x16ASCII_String("ENERGY, J        ", 17, 0x3A, 0x0E, 0x06);
+ 156   3                    write_8x16ASCII_String("RADIATION 1, mJ  ", 17, 0x3A, 0x1E, 0x06);
+ 157   3                    write_8x16ASCII_String("RADIATION 2, mJ  ", 17, 0x3A, 0x2E, 0x06);
+ 158   3                    setBrightnessBigNumber(0x0A);
+ 159   3                    break;
+ 160   3            case 11:if(needClearMainDisplay){
+ 161   4                        needClearMainDisplay = 0;
+ 162   4                        clearDisplay();     
+ 163   4                    }
+ 164   3                    needClearSelectMenuDisplay = 1;     
+ 165   3                    //write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 166   3                    
+ 167   3                    //write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);/**/
+ 168   3                    write_8x16ASCII_String("ENERGY, J        ", 17, 0x3A, 0x00, 0x0F);
+ 169   3                    write_8x16ASCII_String("RADIATION 1, mJ  ", 17, 0x3A, 0x0F, 0x06);
+ 170   3                    write_8x16ASCII_String("RADIATION 2, mJ  ", 17, 0x3A, 0x1F, 0x06);
+ 171   3                    //write_5x7ASCII_String(buffer,           9, 0x3A, 0x30, 0x0F);
+ 172   3                    setBrightnessBigNumber(0x0F);     
+ 173   3                    break;
+ 174   3            case 12:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 175   3                    write_5x7ASCII_String("MAIN MENU",9,0x40, 0x01, 0x06);
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 4   
+
+ 176   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/
+ 177   3                    write_8x16ASCII_String("ENERGY, J        ", 17, 0x3A, 0x00, 0x06);
+ 178   3                    write_8x16ASCII_String("RADIATION 1, mJ  ", 17, 0x3A, 0x0F, 0x0F);
+ 179   3                    write_8x16ASCII_String("RADIATION 2, mJ  ", 17, 0x3A, 0x1F, 0x06);
+ 180   3                    setBrightnessBigNumber(0x0F);
+ 181   3                    break;
+ 182   3            case 13:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 183   3                    write_5x7ASCII_String("MAIN MENU",9,0x40, 0x01, 0x06);
+ 184   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/
+ 185   3                    write_8x16ASCII_String("ENERGY, J        ", 17, 0x3A, 0x00, 0x06);
+ 186   3                    write_8x16ASCII_String("RADIATION 1, mJ  ", 17, 0x3A, 0x0F, 0x06);
+ 187   3                    write_8x16ASCII_String("RADIATION 2, mJ  ", 17, 0x3A, 0x1F, 0x0F);
+ 188   3                    setBrightnessBigNumber(0x0F);
+ 189   3                    break;
+ 190   3            case 20:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x0F);
+ 191   3                    write_5x7ASCII_String("USER MENU",9,0x40, 0x01, 0x0F);
+ 192   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);    */          
+ 193   3                    write_8x16ASCII_String("LAMP FREQUENCY,Hz", 17, 0x3A, 0x00, 0x06);
+ 194   3                    write_8x16ASCII_String("OUTPUT prr       ", 17, 0x3A, 0x0F, 0x06);
+ 195   3                    write_8x16ASCII_String("BURST MODE SHOTS ", 17, 0x3A, 0x1F, 0x06);  
+ 196   3                    setBrightnessBigNumber(0x0A);             
+ 197   3                    break;
+ 198   3            case 21:if(needClearUserMenuDisplay){
+ 199   4                        needClearUserMenuDisplay = 0;
+ 200   4                        clearDisplay(); 
+ 201   4                    }
+ 202   3                    /*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 203   3                    write_5x7ASCII_String("USER MENU",9,0x40, 0x01, 0x06);
+ 204   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/              
+ 205   3                    write_8x16ASCII_String("LAMP FREQUENCY,Hz", 17, 0x3A, 0x00, 0x0F);//LAMP FREQUENCY, Hz
+ 206   3                    write_8x16ASCII_String("OUTPUT prr       ", 17, 0x3A, 0x0F, 0x06);
+ 207   3                    write_8x16ASCII_String("BURST MODE SHOTS ", 17, 0x3A, 0x1F, 0x06);
+ 208   3                    setBrightnessBigNumber(0x0F);
+ 209   3                    delay100mS();
+ 210   3                    break;
+ 211   3            case 22:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 212   3                    write_5x7ASCII_String("USER MENU",9,0x40, 0x01, 0x06);
+ 213   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/              
+ 214   3                    write_8x16ASCII_String("LAMP FREQUENCY,Hz", 17, 0x3A, 0x00, 0x06);
+ 215   3                    write_8x16ASCII_String("OUTPUT prr       ", 17, 0x3A, 0x0F, 0x0F);//OUPUT, prr
+ 216   3                    write_8x16ASCII_String("BURST MODE SHOTS ", 17, 0x3A, 0x1F, 0x06);
+ 217   3                    setBrightnessBigNumber(0x0F);
+ 218   3                    break;
+ 219   3            case 23:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 220   3                    write_5x7ASCII_String("USER MENU",9,0x40, 0x01, 0x06);
+ 221   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/              
+ 222   3                    write_8x16ASCII_String("LAMP FREQUENCY,Hz", 17, 0x3A, 0x00, 0x06);
+ 223   3                    write_8x16ASCII_String("OUTPUT prr       ", 17, 0x3A, 0x0F, 0x06);
+ 224   3                    write_8x16ASCII_String("BURST MODE SHOTS ", 17, 0x3A, 0x1F, 0x0F);//BURST MODE SHOTS
+ 225   3                    setBrightnessBigNumber(0x0F);
+ 226   3                    break;
+ 227   3            case 24:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 228   3                    write_5x7ASCII_String("USER MENU",9,0x40, 0x01, 0x06);
+ 229   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/              
+ 230   3                    write_8x16ASCII_String("Q-SW1 delay, uS  ", 17, 0x3A, 0x00, 0x0F);//DELAY1
+ 231   3                    write_8x16ASCII_String("Q-SW2 delay, uS  ", 17, 0x3A, 0x0F, 0x06);
+ 232   3                    write_8x16ASCII_String("SIMMER OFF, S    ", 17, 0x3A, 0x1F, 0x06);
+ 233   3                    setBrightnessBigNumber(0x0F);
+ 234   3                    break;
+ 235   3            case 25:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 236   3                    write_5x7ASCII_String("USER MENU",9,0x40, 0x01, 0x06);
+ 237   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/              
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 5   
+
+ 238   3                    write_8x16ASCII_String("Q-SW1 delay, uS  ", 17, 0x3A, 0x00, 0x06);
+ 239   3                    write_8x16ASCII_String("Q-SW2 delay, uS  ", 17, 0x3A, 0x0F, 0x0F);//DELAY2
+ 240   3                    write_8x16ASCII_String("SIMMER OFF, S    ", 17, 0x3A, 0x1F, 0x06);  
+ 241   3                    setBrightnessBigNumber(0x0F);
+ 242   3                    break;
+ 243   3            case 26:/*write_5x7ASCII_String("<", 1, 0x3D, 0x01, 0x00);
+ 244   3                    write_5x7ASCII_String("USER MENU",9,0x40, 0x01, 0x06);
+ 245   3                    write_5x7ASCII_String(" > ", 3, 0x52, 0x01, 0x00);*/              
+ 246   3                    write_8x16ASCII_String("Q-SW1 delay, uS  ", 17, 0x3A, 0x00, 0x06);
+ 247   3                    write_8x16ASCII_String("Q-SW2 delay, uS  ", 17, 0x3A, 0x0F, 0x06);
+ 248   3                    write_8x16ASCII_String("SIMMER OFF, S    ", 17, 0x3A, 0x1F, 0x0F);//SIMMER OFF
+ 249   3                    setBrightnessBigNumber(0x0F);
+ 250   3                    break;
+ 251   3            case 30:needClearMainDisplay = 1;
+ 252   3                    if(needClearSelectMenuDisplay){
+ 253   4                      needClearSelectMenuDisplay = 0;
+ 254   4                      clearBigFontSquare(0x1C, 0x00, 0x00); 
+ 255   4                    }
+ 256   3                    write_5x7ASCII_String("SELECT MENU BY ",    15,0x1C, 0x00, 0x06);//SELECT MENU3
+ 257   3                    write_5x7ASCII_String("USING ",              6,0x1C, 0x0E, 0x06);
+ 258   3                    write_5x7ASCII_String("\"<\" \">\"  ",       9,0x27, 0x0E, 0x0F);
+ 259   3                    write_5x7ASCII_String("   AND PRESS   ",    15,0x1C, 0x1E, 0x06);
+ 260   3                    write_5x7ASCII_String("\"DISPLAY\"",         9,0x1C, 0x2E, 0x0F);
+ 261   3                    write_5x7ASCII_String("BUTTON",              6,0x2E, 0x2E, 0x06);
+ 262   3                    write_8x16ASCII_String("Main Service Menu", 17, 0x3A, 0x00, 0x0F);//Main Service Menu
+ 263   3                    write_8x16ASCII_String("RC Service Menu  ", 17, 0x3A, 0x0F, 0x06);
+ 264   3                    write_8x16ASCII_String("PS Service Menu  ", 17, 0x3A, 0x1E, 0x06);
+ 265   3                    write_8x16ASCII_String("CS Service Menu  ", 17, 0x3A, 0x2E, 0x06);  
+ 266   3                    needClearUserMenuDisplay = 1;
+ 267   3                    setBrightnessBigNumber(0x02);
+ 268   3                    break;
+ 269   3            case 31:needClearMainDisplay = 1;
+ 270   3                    if(needClearSelectMenuDisplay){
+ 271   4                      needClearSelectMenuDisplay = 0;
+ 272   4                      clearBigFontSquare(0x1C, 0x00, 0x00); 
+ 273   4                    }             
+ 274   3                    write_5x7ASCII_String("SELECT MENU BY ",    15,0x1C, 0x00, 0x06);//SELECT MENU3
+ 275   3                    write_5x7ASCII_String("USING ",              6,0x1C, 0x0E, 0x06);
+ 276   3                    write_5x7ASCII_String("\"<\" \">\"  ",       9,0x27, 0x0E, 0x0F);
+ 277   3                    write_5x7ASCII_String("   AND PRESS   ",    15,0x1C, 0x1E, 0x06);
+ 278   3                    write_5x7ASCII_String("\"DISPLAY\"",         9,0x1C, 0x2E, 0x0F);
+ 279   3                    write_5x7ASCII_String("BUTTON",              6,0x2E, 0x2E, 0x06);
+ 280   3                    write_8x16ASCII_String("Main Service Menu", 17, 0x3A, 0x00, 0x0F);//Main Service Menu
+ 281   3                    write_8x16ASCII_String("RC Service Menu  ", 17, 0x3A, 0x0F, 0x06);
+ 282   3                    write_8x16ASCII_String("PS Service Menu  ", 17, 0x3A, 0x1E, 0x06);
+ 283   3                    write_8x16ASCII_String("CS Service Menu  ", 17, 0x3A, 0x2E, 0x06);  
+ 284   3                    write_8x16ASCII_String("                   ", 17, 0x3A, 0x2E, 0x06);
+ 285   3                    needClearUserMenuDisplay = 1;
+ 286   3                    needClearRC_Menu_Display = 1;
+ 287   3                    delay100mS();
+ 288   3                    delay100mS();
+ 289   3                    delay100mS();
+ 290   3                    delay100mS();
+ 291   3                    break;
+ 292   3            case 32:write_5x7ASCII_String("SELECT MENU BY ",    15,0x1C, 0x00, 0x06);//SELECT MENU3
+ 293   3                    write_5x7ASCII_String("USING ",              6,0x1C, 0x0E, 0x06);
+ 294   3                    write_5x7ASCII_String("\"<\" \">\"  ",       9,0x27, 0x0E, 0x0F);
+ 295   3                    write_5x7ASCII_String("   AND PRESS   ",    15,0x1C, 0x1E, 0x06);
+ 296   3                    write_5x7ASCII_String("\"DISPLAY\"",         9,0x1C, 0x2E, 0x0F);
+ 297   3                    write_5x7ASCII_String("BUTTON",              6,0x2E, 0x2E, 0x06);   
+ 298   3                    write_8x16ASCII_String("Main Service Menu", 17, 0x3A, 0x00, 0x06);
+ 299   3                    write_8x16ASCII_String("RC Service Menu  ", 17, 0x3A, 0x0F, 0x0F);//RC Service Menu
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 6   
+
+ 300   3                    write_8x16ASCII_String("PS Service Menu  ", 17, 0x3A, 0x1E, 0x06);  
+ 301   3                    write_8x16ASCII_String("CS Service Menu  ", 17, 0x3A, 0x2E, 0x06);  
+ 302   3                    delay100mS();     
+ 303   3                    break;
+ 304   3            case 33:write_5x7ASCII_String("SELECT MENU BY ",    15,0x1C, 0x00, 0x06);//SELECT MENU3
+ 305   3                    write_5x7ASCII_String("USING ",              6,0x1C, 0x0E, 0x06);//SELECT MENU3
+ 306   3                    write_5x7ASCII_String("\"<\" \">\"  ",       9,0x27, 0x0E, 0x0F);//SELECT MENU3
+ 307   3                    write_5x7ASCII_String("   AND PRESS   ",    15,0x1C, 0x1E, 0x06);//SELECT MENU3
+ 308   3                    write_5x7ASCII_String("\"DISPLAY\"",         9,0x1C, 0x2E, 0x0F);//SELECT MENU3
+ 309   3                    write_5x7ASCII_String("BUTTON",              6,0x2E, 0x2E, 0x06);//SELECT MENU3       
+ 310   3                    write_8x16ASCII_String("Main Service Menu", 17, 0x3A, 0x00, 0x06);
+ 311   3                    write_8x16ASCII_String("RC Service Menu  ", 17, 0x3A, 0x0F, 0x06);
+ 312   3                    write_8x16ASCII_String("PS Service Menu  ", 17, 0x3A, 0x1E, 0x0F);//PS Service Menu
+ 313   3                    write_8x16ASCII_String("CS Service Menu  ", 17, 0x3A, 0x2E, 0x06);                  
+ 314   3                    delay100mS();     
+ 315   3                    break;
+ 316   3            case 40:clearDisplay();
+ 317   3                    needClearSelectMenuDisplay = 1;
+ 318   3                    write_8x16ASCII_String("LOTIS TII Minsk, Belarus        ", 32, 0x1C, 0x00, 0x0F);
+ 319   3                    write_8x16ASCII_String("phone:+375(17) 321-21-55        ", 32, 0x1C, 0x0F, 0x0F);
+ 320   3                    write_8x16ASCII_String("fax  :+375(17) 321-21-56        ", 32, 0x1C, 0x1E, 0x0F);
+ 321   3                    write_8x16ASCII_String("www.lotis-tii.com               ", 32, 0x1C, 0x2E, 0x0F);
+ 322   3                    break;
+ 323   3            case 41:clearDisplay();
+ 324   3                    needClearWorkTimeShotsDisplay = 1;
+ 325   3                    write_8x16ASCII_String("ID = 6176  LS2137/3             ", 32, 0x1C, 0x00, 0x0F);
+ 326   3                    write_8x16ASCII_String("2.21 SOFTWARE VERSION OF PS     ", 32, 0x1C, 0x0F, 0x0F);
+ 327   3                    break;
+ 328   3            case 42:if(needClearWorkTimeShotsDisplay){
+ 329   4                      needClearWorkTimeShotsDisplay = 0;
+ 330   4                      clearDisplay();
+ 331   4                    }
+ 332   3                    temp_OPERATION_TIME = OPERATION_TIME;
+ 333   3                    time_hour = OPERATION_TIME/60;
+ 334   3                    if(time_hour > 0){
+ 335   4                      lenght_time_hour_str = (int)(log10(time_hour) + 1);//count symbol in number of time hours 
+ 336   4                      sprintf(time_hour_str,"%lu",time_hour);
+ 337   4                    }else{            
+ 338   4                      lenght_time_hour_str = 1;     
+ 339   4                      time_hour_str[0] = '0';               
+ 340   4                    }
+ 341   3                    time_min = OPERATION_TIME%60;
+ 342   3                    if(time_min > 0){
+ 343   4                      lenght_time_min_str = (int)(log10(time_min) + 1);//count symbol in number of time min
+ 344   4                      sprintf(time_min_str,"%lu",time_min);
+ 345   4                    }else{
+ 346   4                      lenght_time_min_str = 1;  
+ 347   4                      time_min_str[0] = '0';
+ 348   4                    }
+ 349   3                    
+ 350   3                    temp_FLASH_NUMBER = FLASH_NUMBER;
+ 351   3                    if(FLASH_NUMBER > 0){
+ 352   4                        lenght_flash_number_str = (int)(log10(FLASH_NUMBER) + 1);
+ 353   4                        sprintf(flash_number_str,"%lu",FLASH_NUMBER);
+ 354   4                    }else{
+ 355   4                        flash_number_str[0] = '0';
+ 356   4                        lenght_flash_number_str = 1;
+ 357   4                    }     
+ 358   3                    
+ 359   3                    write_8x16ASCII_String("WORK TIME =                     ",32, 0x1C, 0x00, 0x0F);
+ 360   3                    write_8x16ASCII_String(time_hour_str,  lenght_time_hour_str, 0x34, 0x00, 0x0F);
+ 361   3                    write_8x16ASCII_String(" hour ",                          6, 0x34 + lenght_time_hour_str*2, 0x00, 0
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 7   
+
+             -x0F);
+ 362   3                    write_8x16ASCII_String(time_min_str,    lenght_time_min_str, 0x40 + lenght_time_hour_str*2, 0x00, 0
+             -x0F);
+ 363   3                    write_8x16ASCII_String(" min",                            4, 0x40 + lenght_time_hour_str*2 + lenght
+             -_time_min_str*2, 0x00, 0x0F);
+ 364   3                    write_8x16ASCII_String("Reset time                      ",32, 0x1C, 0x0F, 0x06);
+ 365   3                    write_5x7ASCII_String("PRESS \"<\" TO SELECT",           20, 0x36, 0x15, 0x06);
+ 366   3                    write_8x16ASCII_String("SHOTS =                         ",32, 0x1C, 0x1E, 0x0F);
+ 367   3                    write_8x16ASCII_String(flash_number_str,lenght_flash_number_str, 0x2C, 0x1E, 0x0F);
+ 368   3                    write_8x16ASCII_String("Reset shots                     ",32, 0x1C, 0x2E, 0x06);
+ 369   3                    write_5x7ASCII_String("PRESS \"<\" TO SELECT",           20, 0x36, 0x33, 0x06);
+ 370   3                    break;
+ 371   3            case 421:
+ 372   3                    time_hour = OPERATION_TIME/60;
+ 373   3                    if(time_hour > 0){
+ 374   4                      lenght_time_hour_str = (int)(log10(time_hour) + 1);//count symbol in number of time hours 
+ 375   4                      sprintf(time_hour_str,"%lu",time_hour);
+ 376   4                    }else{            
+ 377   4                      lenght_time_hour_str = 1;     
+ 378   4                      time_hour_str[0] = '0';               
+ 379   4                    }
+ 380   3                    time_min = OPERATION_TIME%60;
+ 381   3                    if(time_min > 0){
+ 382   4                      lenght_time_min_str = (int)(log10(time_min) + 1);//count symbol in number of time min
+ 383   4                      sprintf(time_min_str,"%lu",time_min);
+ 384   4                    }else{
+ 385   4                      lenght_time_min_str = 1;  
+ 386   4                      time_min_str[0] = '0';
+ 387   4                    } 
+ 388   3                    
+ 389   3                    if(FLASH_NUMBER > 0){
+ 390   4                        lenght_flash_number_str = (int)(log10(FLASH_NUMBER) + 1);
+ 391   4                        sprintf(flash_number_str,"%lu",FLASH_NUMBER);
+ 392   4                    }else{
+ 393   4                        flash_number_str[0] = '0';
+ 394   4                        lenght_flash_number_str = 1;
+ 395   4                    } 
+ 396   3                    
+ 397   3                    write_8x16ASCII_String("WORK TIME =                     ",32, 0x1C, 0x00, 0x06);
+ 398   3                    write_8x16ASCII_String(time_hour_str,  lenght_time_hour_str, 0x34, 0x00, 0x0F);
+ 399   3                    write_8x16ASCII_String(" hour ",                          6, 0x34 + lenght_time_hour_str*2, 0x00, 0
+             -x06);
+ 400   3                    write_8x16ASCII_String(time_min_str,    lenght_time_min_str, 0x40 + lenght_time_hour_str*2, 0x00, 0
+             -x0F);
+ 401   3                    write_8x16ASCII_String(" min",                            4, 0x40 + lenght_time_hour_str*2 + lenght
+             -_time_min_str*2, 0x00, 0x06);
+ 402   3                    write_8x16ASCII_String("Reset time                     ",32, 0x1C, 0x0F, 0x0F);
+ 403   3                    write_5x7ASCII_String("PRESS \"DISPLAY\"     ",          20, 0x36, 0x15, 0x0F);
+ 404   3                    write_8x16ASCII_String("SHOTS =                        ",32, 0x1C, 0x1E, 0x06);
+ 405   3                    write_8x16ASCII_String(flash_number_str                 ,lenght_flash_number_str, 0x2C, 0x1E, 0x06)
+             -;
+ 406   3                    write_8x16ASCII_String("Reset shots                    ",32, 0x1C, 0x2E, 0x06);
+ 407   3                    write_5x7ASCII_String("PRESS \"<\" TO SELECT",           20, 0x36, 0x33, 0x06);
+ 408   3                    delay100mS();
+ 409   3                    needClearWorkTimeShotsDisplay = 0;
+ 410   3                    break;
+ 411   3            case 422:
+ 412   3                    time_hour = OPERATION_TIME/60;
+ 413   3                    if(time_hour > 0){
+ 414   4                      lenght_time_hour_str = (int)(log10(time_hour) + 1);//count symbol in number of time hours 
+ 415   4                      sprintf(time_hour_str,"%lu",time_hour);
+ 416   4                    }else{            
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 8   
+
+ 417   4                      lenght_time_hour_str = 1;     
+ 418   4                      time_hour_str[0] = '0';               
+ 419   4                    }
+ 420   3                    time_min = OPERATION_TIME%60;
+ 421   3                    if(time_min > 0){
+ 422   4                      lenght_time_min_str = (int)(log10(time_min) + 1);//count symbol in number of time min
+ 423   4                      sprintf(time_min_str,"%lu",time_min);
+ 424   4                    }else{
+ 425   4                      lenght_time_min_str = 1;  
+ 426   4                      time_min_str[0] = '0';
+ 427   4                    } 
+ 428   3                    
+ 429   3                    if(FLASH_NUMBER > 0){
+ 430   4                        lenght_flash_number_str = (int)(log10(FLASH_NUMBER) + 1);
+ 431   4                        sprintf(flash_number_str,"%lu",FLASH_NUMBER);
+ 432   4                    }else{
+ 433   4                        flash_number_str[0] = '0';
+ 434   4                        lenght_flash_number_str = 1;
+ 435   4                    } 
+ 436   3                    
+ 437   3                    write_8x16ASCII_String("WORK TIME =                     ",32, 0x1C, 0x00, 0x06);
+ 438   3                    write_8x16ASCII_String(time_hour_str,  lenght_time_hour_str, 0x34, 0x00, 0x06);
+ 439   3                    write_8x16ASCII_String(" hour ",                          6, 0x34 + lenght_time_hour_str*2, 0x00, 0
+             -x06);
+ 440   3                    write_8x16ASCII_String(time_min_str,    lenght_time_min_str, 0x40 + lenght_time_hour_str*2, 0x00, 0
+             -x06);
+ 441   3                    write_8x16ASCII_String(" min",                            4, 0x40 + lenght_time_hour_str*2 + lenght
+             -_time_min_str*2, 0x00, 0x06);
+ 442   3                    write_8x16ASCII_String("Reset time                     ",32, 0x1C, 0x0F, 0x06);
+ 443   3                    write_5x7ASCII_String("PRESS \"<\" TO SELECT ",          20, 0x36, 0x15, 0x06);
+ 444   3                    write_8x16ASCII_String("SHOTS =                        ",32, 0x1C, 0x1E, 0x06);
+ 445   3                    write_8x16ASCII_String(flash_number_str                 ,lenght_flash_number_str, 0x2C, 0x1E, 0x0F)
+             -;
+ 446   3                    write_8x16ASCII_String("Reset shots                    ",32, 0x1C, 0x2E, 0x0F);
+ 447   3                    write_5x7ASCII_String("PRESS \"DISPLAY\"     ",          20, 0x36, 0x33, 0x0F);
+ 448   3                    delay100mS();
+ 449   3                    needClearWorkTimeShotsDisplay = 0;
+ 450   3                    break;
+ 451   3            case 43:clearDisplay();
+ 452   3                    write_8x16ASCII_String("J, Maximum of    ", 17, 0x3A, 0x00, 0x0F);
+ 453   3                    write_8x16ASCII_String("PUMP ENERGY      ", 17, 0x3A, 0x0F, 0x0F);
+ 454   3                    write_8x16ASCII_String("Hz, Maximum of   ", 17, 0x3A, 0x1F, 0x06);
+ 455   3                    write_8x16ASCII_String("LAMP FREQUENCY   ", 17, 0x3A, 0x2F, 0x06);
+ 456   3                    break;  
+ 457   3            case 44:write_8x16ASCII_String("J, Maximum of    ", 17, 0x3A, 0x00, 0x06);
+ 458   3                    write_8x16ASCII_String("PUMP ENERGY      ", 17, 0x3A, 0x0F, 0x06);
+ 459   3                    write_8x16ASCII_String("Hz, Maximum of   ", 17, 0x3A, 0x1F, 0x0F);
+ 460   3                    write_8x16ASCII_String("LAMP FREQUENCY   ", 17, 0x3A, 0x2F, 0x0F);
+ 461   3                    break;
+ 462   3            case 45:write_8x16ASCII_String("mJ, Maximum of   ", 17, 0x3A, 0x00, 0x0F);
+ 463   3                    write_8x16ASCII_String("OUTPUT ENERGY 1  ", 17, 0x3A, 0x0F, 0x0F);
+ 464   3                    write_8x16ASCII_String("                 ", 17, 0x3A, 0x1F, 0x06);
+ 465   3                    write_8x16ASCII_String("                 ", 17, 0x3A, 0x2F, 0x06);
+ 466   3                    break;
+ 467   3            case 50:
+ 468   3                    needClearSelectMenuDisplay = 1;
+ 469   3                    showOneTime_RC_SOFT_VERS = 1;
+ 470   3                    if(needClearRC_Menu_Display){
+ 471   4                      needClearRC_Menu_Display = 0;
+ 472   4                      clearDisplay();
+ 473   4                    }
+ 474   3                    write_8x16ASCII_String("                 ", 17, 0x3A, 0x00, 0x06);
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 9   
+
+ 475   3                    write_8x16ASCII_String("SOFTWARE VERSION ", 17, 0x3A, 0x0F, 0x0F);//SOFTWARE
+ 476   3                    write_8x16ASCII_String("OF REMOTE CONTROL", 17, 0x3A, 0x1F, 0x0F);//VERSION OF RC
+ 477   3                    write_8x16ASCII_String("                 ", 17, 0x3A, 0x2F, 0x06);
+ 478   3                    break;
+ 479   3            case 51:write_8x16ASCII_String("  MESSAGE SOUND  ", 17, 0x3A, 0x00, 0x0F);//MESSAGE SOUND MODE
+ 480   3                    write_8x16ASCII_String("      MODE       ", 17, 0x3A, 0x0F, 0x0F);//MESSAGE SOUND MODE
+ 481   3                    write_8x16ASCII_String("  BUTTONS SOUND  ", 17, 0x3A, 0x1F, 0x06);
+ 482   3                    write_8x16ASCII_String("      MODE       ", 17, 0x3A, 0x2F, 0x06);
+ 483   3                    break;
+ 484   3            case 52:write_8x16ASCII_String("  MESSAGE SOUND  ", 17, 0x3A, 0x00, 0x06);
+ 485   3                    write_8x16ASCII_String("      MODE       ", 17, 0x3A, 0x0F, 0x06);
+ 486   3                    write_8x16ASCII_String("  BUTTONS SOUND  ", 17, 0x3A, 0x1F, 0x0F);//BUTTONS SOUND MODE
+ 487   3                    write_8x16ASCII_String("      MODE       ", 17, 0x3A, 0x2F, 0x0F);//BUTTONS SOUND MODE
+ 488   3                    break;
+ 489   3            case 53:write_8x16ASCII_String("  DISPLAY MODE   ", 17, 0x3A, 0x00, 0x0F);//DISPLAY MODE
+ 490   3                    write_8x16ASCII_String("    (GENERAL)    ", 17, 0x3A, 0x0F, 0x0F);//  (GENERAL)
+ 491   3                    write_8x16ASCII_String("  ERROR DISPLAY  ", 17, 0x3A, 0x1F, 0x06);
+ 492   3                    write_8x16ASCII_String("      MODE       ", 17, 0x3A, 0x2F, 0x06);
+ 493   3                    break;
+ 494   3            case 54:write_8x16ASCII_String("  DISPLAY MODE   ", 17, 0x3A, 0x00, 0x06);
+ 495   3                    write_8x16ASCII_String("    (GENERAL)    ", 17, 0x3A, 0x0F, 0x06);
+ 496   3                    write_8x16ASCII_String("  ERROR DISPLAY  ", 17, 0x3A, 0x1F, 0x0F);//ERROR DISPLAY
+ 497   3                    write_8x16ASCII_String("      MODE       ", 17, 0x3A, 0x2F, 0x0F);//    MODE
+ 498   3                    break;
+ 499   3            case 60:clearDisplay();
+ 500   3                    needClearSelectMenuDisplay = 1;           
+ 501   3                    
+ 502   3                    lenght_CAPACITOR_V = (int)(log10(CAPACITOR_V) + 1);             
+ 503   3                    sprintf(str_CAPACITOR_V,"%d",CAPACITOR_V);              
+ 504   3                    swingToEndArr(str_CAPACITOR_V, 5, lenght_CAPACITOR_V);
+ 505   3                    
+ 506   3                    write_20x32_Arial_String(str_CAPACITOR_V,    5, 0x30, 0x00, 0x0F);
+ 507   3                    write_8x16ASCII_String("    V, ACTUAL    ", 17, 0x3A, 0x00, 0x0F);
+ 508   3                    write_8x16ASCII_String("CAPACITOR VOLTAGE", 17, 0x3A, 0x0F, 0x0F);
+ 509   3                    
+ 510   3                    if(SET_VOLTAGE > 0){
+ 511   4                      lenght_SET_VOLTAGE = (int)((log10(SET_VOLTAGE)) + 1);
+ 512   4                    }else{
+ 513   4                      lenght_SET_VOLTAGE = 1;
+ 514   4                    }               
+ 515   3                    sprintf(str_SET_VOLTAGE,"%d",SET_VOLTAGE);              
+ 516   3                    swingToEndArr(str_SET_VOLTAGE, 5, lenght_SET_VOLTAGE);  
+ 517   3                    
+ 518   3                    write_20x32_Arial_String(str_SET_VOLTAGE,    5, 0x30, 0x1F, 0x0F);              
+ 519   3                    write_8x16ASCII_String("                 ", 17, 0x3A, 0x1F, 0x06);
+ 520   3                    write_8x16ASCII_String(" V, SET  VOLTAGE ", 17, 0x3A, 0x2F, 0x0F);
+ 521   3                    break;
+ 522   3            case 61:
+ 523   3                    lenght_U_PERCENT = (int)(log10(U_PERCENT) + 1);             
+ 524   3                    sprintf(str_U_PERCENT,"%d",U_PERCENT);              
+ 525   3                    swingToEndArr(str_U_PERCENT, 5, lenght_U_PERCENT);              
+ 526   3                    write_20x32_Arial_String(str_U_PERCENT,      5, 0x30, 0x00, 0x0F);              
+ 527   3                    write_8x16ASCII_String("%,MAXIMUM VOLTAGE", 17, 0x3A, 0x00, 0x0F);
+ 528   3                    write_8x16ASCII_String("    DEVIATION    ", 17, 0x3A, 0x10, 0x0F);
+ 529   3            
+ 530   3                    lenght_PULS_LONGNESS = (int)(log10(PULS_LONGNESS) + 1);             
+ 531   3                    sprintf(str_PULS_LONGNESS,"%d",PULS_LONGNESS);              
+ 532   3                    swingToEndArr(str_PULS_LONGNESS, 5, lenght_PULS_LONGNESS);              
+ 533   3                    write_20x32_Arial_String(str_PULS_LONGNESS,  5, 0x30, 0x1F, 0x06);      
+ 534   3                    write_8x16ASCII_String("                 ", 17, 0x3A, 0x1F, 0x06);
+ 535   3                    write_8x16ASCII_String("uS,PULSE DURATION", 17, 0x3A, 0x2F, 0x06);
+ 536   3                    break;
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 10  
+
+ 537   3            case 62:lenght_U_PERCENT = (int)(log10(U_PERCENT) + 1);             
+ 538   3                    sprintf(str_U_PERCENT,"%d",U_PERCENT);              
+ 539   3                    swingToEndArr(str_U_PERCENT, 5, lenght_U_PERCENT);              
+ 540   3                    write_20x32_Arial_String(str_U_PERCENT,      5, 0x30, 0x00, 0x0F);      
+ 541   3                    write_8x16ASCII_String("%,MAXIMUM VOLTAGE", 17, 0x3A, 0x00, 0x06);
+ 542   3                    write_8x16ASCII_String("    DEVIATION    ", 17, 0x3A, 0x10, 0x06);
+ 543   3                    
+ 544   3                    lenght_PULS_LONGNESS = (int)(log10(PULS_LONGNESS) + 1);             
+ 545   3                    sprintf(str_PULS_LONGNESS,"%d",PULS_LONGNESS);              
+ 546   3                    swingToEndArr(str_PULS_LONGNESS, 5, lenght_PULS_LONGNESS);              
+ 547   3                    write_20x32_Arial_String(str_PULS_LONGNESS,  5, 0x30, 0x1F, 0x06);
+ 548   3                    write_8x16ASCII_String("                 ", 17, 0x3A, 0x1F, 0x0F);
+ 549   3                    write_8x16ASCII_String("uS,PULSE DURATION", 17, 0x3A, 0x2F, 0x0F);
+ 550   3                    break;
+ 551   3            default:break;
+ 552   3          }
+ 553   2        }
+ 554   1        
+ 555   1        resetTempParam();
+ 556   1        switch(INDEX_MENU){
+ 557   2            case 10:if(temp_ENERGY != ENERGY){
+ 558   3                       temp_ENERGY = ENERGY;
+ 559   3                       showBigNumber(ENERGY);
+ 560   3                    }
+ 561   2                    break;
+ 562   2            case 11:if(temp_ENERGY != ENERGY){
+ 563   3                       temp_ENERGY = ENERGY;
+ 564   3                       showBigNumber(ENERGY);
+ 565   3                    }
+ 566   2                    break;
+ 567   2            case 12:if(temp_RADIATION1 != RADIATION1){
+ 568   3                      temp_RADIATION1 = RADIATION1;
+ 569   3                      showBigNumber(RADIATION1);
+ 570   3                    }
+ 571   2                    break;
+ 572   2            case 13:if(temp_RADIATION2 != RADIATION2){
+ 573   3                       temp_RADIATION2 = RADIATION2;
+ 574   3                       showBigNumber(RADIATION2);
+ 575   3                    } 
+ 576   2                    break;
+ 577   2            case 20:if(temp_LAMP_FREQUENCY != LAMP_FREQUENCY){
+ 578   3                      temp_LAMP_FREQUENCY = LAMP_FREQUENCY;
+ 579   3                      calcOutputPrrKoefficients();  
+ 580   3                      QSW_F01 = output_prr_arr[max_index_prr];
+ 581   3                      showBigNumber(LAMP_FREQUENCY);          
+ 582   3                    }       
+ 583   2                    break;
+ 584   2            case 21:if(temp_LAMP_FREQUENCY != LAMP_FREQUENCY){
+ 585   3                      temp_LAMP_FREQUENCY = LAMP_FREQUENCY;
+ 586   3                      calcOutputPrrKoefficients();  
+ 587   3                      QSW_F01 = output_prr_arr[max_index_prr];
+ 588   3                      showBigNumber(LAMP_FREQUENCY);          
+ 589   3                    }else{
+ 590   3                      if(showOneTimeFREQ){
+ 591   4                        showBigNumber(LAMP_FREQUENCY);
+ 592   4                        showOneTimeFREQ = 0;
+ 593   4                      }
+ 594   3                    }               
+ 595   2                    break;
+ 596   2            case 22:showBigNumber(QSW_F01);             
+ 597   2                    break;
+ 598   2            case 23:if(temp_QSW_SHOTS != QSW_SHOTS){
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 11  
+
+ 599   3                      temp_QSW_SHOTS = QSW_SHOTS;
+ 600   3                      showBigNumber(QSW_SHOTS);
+ 601   3                    }
+ 602   2                    break;
+ 603   2            case 24:if(temp_DELAY1 != DELAY1){
+ 604   3                       temp_DELAY1 = DELAY1;
+ 605   3                       showBigNumber(DELAY1); 
+ 606   3                    } 
+ 607   2                    break;
+ 608   2            case 25:if(temp_DELAY2 != DELAY2){
+ 609   3                       temp_DELAY2 = DELAY2;
+ 610   3                       showBigNumber(DELAY2); 
+ 611   3                    }     
+ 612   2                    break;
+ 613   2            case 26:showBigNumber(SIMMER_TIME);       
+ 614   2                    break;
+ 615   2            case 42:if(temp_OPERATION_TIME != OPERATION_TIME){
+ 616   3                          temp_OPERATION_TIME = OPERATION_TIME;               
+ 617   3                          time_hour = OPERATION_TIME/60;
+ 618   3                          if(time_hour > 0){
+ 619   4                            lenght_time_hour_str = (int)(log10(time_hour) + 1);//count symbol in number of time hours 
+ 620   4                            sprintf(time_hour_str,"%lu",time_hour);
+ 621   4                          }else{            
+ 622   4                            lenght_time_hour_str = 1;     
+ 623   4                            time_hour_str[0] = '0';               
+ 624   4                          }
+ 625   3                          time_min = OPERATION_TIME%60;
+ 626   3                          if(time_min > 0){
+ 627   4                            lenght_time_min_str = (int)(log10(time_min) + 1);//count symbol in number of time min
+ 628   4                            sprintf(time_min_str,"%lu",time_min);
+ 629   4                          }else{
+ 630   4                            lenght_time_min_str = 1;  
+ 631   4                            time_min_str[0] = '0';
+ 632   4                          }                               
+ 633   3                          write_8x16ASCII_String("                     ",32, 0x32, 0x00, 0x0F);
+ 634   3                          write_8x16ASCII_String(time_hour_str,  lenght_time_hour_str, 0x34, 0x00, 0x0F);
+ 635   3                          write_8x16ASCII_String(" hour ",                          6, 0x34 + lenght_time_hour_str*2, 0x00
+             -, 0x0F);
+ 636   3                          write_8x16ASCII_String(time_min_str,    lenght_time_min_str, 0x40 + lenght_time_hour_str*2, 0x00
+             -, 0x0F);
+ 637   3                          write_8x16ASCII_String(" min ",                            5, 0x40 + lenght_time_hour_str*2 + le
+             -nght_time_min_str*2, 0x00, 0x0F);
+ 638   3                        }
+ 639   2                        if(temp_FLASH_NUMBER != FLASH_NUMBER){
+ 640   3                          temp_FLASH_NUMBER = FLASH_NUMBER;
+ 641   3                          if(FLASH_NUMBER > 0){
+ 642   4                            lenght_flash_number_str = (int)(log10(FLASH_NUMBER) + 1);
+ 643   4                            sprintf(flash_number_str,"%lu",FLASH_NUMBER);
+ 644   4                          }else{
+ 645   4                            flash_number_str[0] = '0';
+ 646   4                            lenght_flash_number_str = 1;
+ 647   4                          }
+ 648   3                          write_8x16ASCII_String(flash_number_str,lenght_flash_number_str, 0x2C, 0x1E, 0x0F);
+ 649   3                          write_8x16ASCII_String("         ",9, 0x2C + lenght_flash_number_str*2, 0x1E, 0x0F);
+ 650   3                        }
+ 651   2                    
+ 652   2                    break;
+ 653   2              case 421:if(temp_OPERATION_TIME != OPERATION_TIME){
+ 654   3                        temp_OPERATION_TIME = OPERATION_TIME;               
+ 655   3                        time_hour = OPERATION_TIME/60;
+ 656   3                        if(time_hour > 0){
+ 657   4                          lenght_time_hour_str = (int)(log10(time_hour) + 1);//count symbol in number of time hours 
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 12  
+
+ 658   4                          sprintf(time_hour_str,"%lu",time_hour);
+ 659   4                        }else{            
+ 660   4                          lenght_time_hour_str = 1;     
+ 661   4                          time_hour_str[0] = '0';               
+ 662   4                        }
+ 663   3                        time_min = OPERATION_TIME%60;
+ 664   3                        if(time_min > 0){
+ 665   4                          lenght_time_min_str = (int)(log10(time_min) + 1);//count symbol in number of time min
+ 666   4                          sprintf(time_min_str,"%lu",time_min);
+ 667   4                        }else{
+ 668   4                          lenght_time_min_str = 1;  
+ 669   4                          time_min_str[0] = '0';
+ 670   4                        }                 
+ 671   3                        write_8x16ASCII_String("WORK TIME =                     ",32, 0x1C, 0x00, 0x06);
+ 672   3                        write_8x16ASCII_String(time_hour_str,  lenght_time_hour_str, 0x34, 0x00, 0x0F);
+ 673   3                        write_8x16ASCII_String(" hour ",                          6, 0x34 + lenght_time_hour_str*2, 0x00,
+             - 0x06);
+ 674   3                        write_8x16ASCII_String(time_min_str,    lenght_time_min_str, 0x40 + lenght_time_hour_str*2, 0x00,
+             - 0x0F);
+ 675   3                        write_8x16ASCII_String(" min",                            4, 0x40 + lenght_time_hour_str*2 + leng
+             -ht_time_min_str*2, 0x00, 0x06);
+ 676   3                        }
+ 677   2                        if(temp_FLASH_NUMBER != FLASH_NUMBER){
+ 678   3                          temp_FLASH_NUMBER = FLASH_NUMBER;
+ 679   3                          if(FLASH_NUMBER > 0){
+ 680   4                            lenght_flash_number_str = (int)(log10(FLASH_NUMBER) + 1);
+ 681   4                            sprintf(flash_number_str,"%lu",FLASH_NUMBER);
+ 682   4                          }else{
+ 683   4                            flash_number_str[0] = '0';
+ 684   4                            lenght_flash_number_str = 1;
+ 685   4                          }
+ 686   3                          write_8x16ASCII_String("SHOTS =                         ",32, 0x1C, 0x1E, 0x06);
+ 687   3                          write_8x16ASCII_String(flash_number_str,lenght_flash_number_str, 0x2C, 0x1E, 0x06);
+ 688   3                        }             
+ 689   2                    break;
+ 690   2              case 422:if(temp_OPERATION_TIME != OPERATION_TIME){
+ 691   3                        temp_OPERATION_TIME = OPERATION_TIME;               
+ 692   3                        time_hour = OPERATION_TIME/60;
+ 693   3                        if(time_hour > 0){
+ 694   4                          lenght_time_hour_str = (int)(log10(time_hour) + 1);//count symbol in number of time hours 
+ 695   4                          sprintf(time_hour_str,"%lu",time_hour);
+ 696   4                        }else{            
+ 697   4                          lenght_time_hour_str = 1;     
+ 698   4                          time_hour_str[0] = '0';               
+ 699   4                        }
+ 700   3                        time_min = OPERATION_TIME%60;
+ 701   3                        if(time_min > 0){
+ 702   4                          lenght_time_min_str = (int)(log10(time_min) + 1);//count symbol in number of time min
+ 703   4                          sprintf(time_min_str,"%lu",time_min);
+ 704   4                        }else{
+ 705   4                          lenght_time_min_str = 1;  
+ 706   4                          time_min_str[0] = '0';
+ 707   4                        }                 
+ 708   3                        write_8x16ASCII_String("WORK TIME =                     ",32, 0x1C, 0x00, 0x06);
+ 709   3                        write_8x16ASCII_String(time_hour_str,  lenght_time_hour_str, 0x34, 0x00, 0x06);
+ 710   3                        write_8x16ASCII_String(" hour ",                          6, 0x34 + lenght_time_hour_str*2, 0x00,
+             - 0x06);
+ 711   3                        write_8x16ASCII_String(time_min_str,    lenght_time_min_str, 0x40 + lenght_time_hour_str*2, 0x00,
+             - 0x06);
+ 712   3                        write_8x16ASCII_String(" min",                            4, 0x40 + lenght_time_hour_str*2 + leng
+             -ht_time_min_str*2, 0x00, 0x06);
+ 713   3                        write_8x16ASCII_String("Shots =                        ",32, 0x1C, 0x1E, 0x06);
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 13  
+
+ 714   3                      }
+ 715   2                      if(temp_FLASH_NUMBER != FLASH_NUMBER){
+ 716   3                          temp_FLASH_NUMBER = FLASH_NUMBER;
+ 717   3                          if(FLASH_NUMBER > 0){
+ 718   4                            lenght_flash_number_str = (int)(log10(FLASH_NUMBER) + 1);
+ 719   4                            sprintf(flash_number_str,"%lu",FLASH_NUMBER);
+ 720   4                          }else{
+ 721   4                            flash_number_str[0] = '0';
+ 722   4                            lenght_flash_number_str = 1;
+ 723   4                          }
+ 724   3                          write_8x16ASCII_String("SHOTS =                         ",32, 0x1C, 0x1E, 0x06);
+ 725   3                          write_8x16ASCII_String(flash_number_str,lenght_flash_number_str, 0x2C, 0x1E, 0x0F);
+ 726   3                        }             
+ 727   2                    break;
+ 728   2            case 43:
+ 729   2                    if(temp_ENERGY_MAX != ENERGY_MAX){
+ 730   3                      temp_ENERGY_MAX = ENERGY_MAX;
+ 731   3                      showBigNumber(ENERGY_MAX);
+ 732   3                    }
+ 733   2                    break;
+ 734   2            case 44:
+ 735   2                    if(temp_LAMP_FREQ_MAX != LAMP_FREQ_MAX){
+ 736   3                      temp_LAMP_FREQ_MAX = LAMP_FREQ_MAX;
+ 737   3                      showBigNumber(LAMP_FREQ_MAX);
+ 738   3                    }
+ 739   2                    break;
+ 740   2            case 45:
+ 741   2                    if(temp_ENERGY_RAD1_MAX != ENERGY_RAD1_MAX){
+ 742   3                      temp_ENERGY_RAD1_MAX = ENERGY_RAD1_MAX;
+ 743   3                      showBigNumber(ENERGY_RAD1_MAX);
+ 744   3                    }
+ 745   2                    break;
+ 746   2            case 50:if(showOneTime_RC_SOFT_VERS){
+ 747   3                      showOneTime_RC_SOFT_VERS = 0;
+ 748   3                      showBigNumber(RC_SOFT_VERSION); 
+ 749   3                    }
+ 750   2                    break;
+ 751   2            case 51:if(temp_MESSAGE_SOUND_MODE != MESSAGE_SOUND_MODE){
+ 752   3                      temp_MESSAGE_SOUND_MODE = MESSAGE_SOUND_MODE;
+ 753   3                      showBigNumber(MESSAGE_SOUND_MODE); 
+ 754   3                    }
+ 755   2                    break;
+ 756   2            case 52:if(temp_BUTTON_SOUND_MODE != BUTTON_SOUND_MODE){
+ 757   3                      temp_BUTTON_SOUND_MODE = BUTTON_SOUND_MODE;
+ 758   3                      showBigNumber(BUTTON_SOUND_MODE); 
+ 759   3                    }
+ 760   2                    break;  
+ 761   2            case 53:if(temp_DISPLAY_MODE != DISPLAY_MODE){
+ 762   3                      temp_DISPLAY_MODE = DISPLAY_MODE;
+ 763   3                      showBigNumber(DISPLAY_MODE); 
+ 764   3                    }
+ 765   2                    break;
+ 766   2            case 54:if(temp_ERROR_DISPLAY_MODE != ERROR_DISPLAY_MODE){
+ 767   3                      temp_ERROR_DISPLAY_MODE = ERROR_DISPLAY_MODE;
+ 768   3                      showBigNumber(ERROR_DISPLAY_MODE); 
+ 769   3                    }
+ 770   2                    break;
+ 771   2            case 60:
+ 772   2                    if(CAPACITOR_V > 0){
+ 773   3                      lenght_CAPACITOR_V = (int)((log10(CAPACITOR_V)) + 1);
+ 774   3                    }else{
+ 775   3                      lenght_CAPACITOR_V = 1;
+C51 COMPILER V9.56.0.0   MENU                                                              06/03/2021 14:52:32 PAGE 14  
+
+ 776   3                    }               
+ 777   2                    sprintf(str_CAPACITOR_V,"%d",CAPACITOR_V);              
+ 778   2                    swingToEndArr(str_CAPACITOR_V, 5, lenght_CAPACITOR_V);              
+ 779   2                    write_20x32_Arial_String(str_CAPACITOR_V, 5, 0x30, 0x00, 0x0F);
+ 780   2                    
+ 781   2                    if(SET_VOLTAGE > 0){
+ 782   3                      lenght_SET_VOLTAGE = (int)((log10(SET_VOLTAGE)) + 1);
+ 783   3                    }else{
+ 784   3                      lenght_SET_VOLTAGE = 1;
+ 785   3                    }               
+ 786   2                    sprintf(str_SET_VOLTAGE,"%d",SET_VOLTAGE);              
+ 787   2                    swingToEndArr(str_SET_VOLTAGE, 5, lenght_SET_VOLTAGE);  
+ 788   2                    write_20x32_Arial_String(str_SET_VOLTAGE, 5, 0x30, 0x1F, 0x0F);
+ 789   2                    break;
+ 790   2            case 61:lenght_U_PERCENT = (int)(log10(U_PERCENT) + 1);             
+ 791   2                    sprintf(str_U_PERCENT,"%d",U_PERCENT);              
+ 792   2                    swingToEndArr(str_U_PERCENT, 5, lenght_U_PERCENT);              
+ 793   2                    write_20x32_Arial_String(str_U_PERCENT,      5, 0x30, 0x00, 0x0F);
+ 794   2                    
+ 795   2                    lenght_PULS_LONGNESS = (int)(log10(PULS_LONGNESS) + 1);             
+ 796   2                    sprintf(str_PULS_LONGNESS,"%d",PULS_LONGNESS);              
+ 797   2                    swingToEndArr(str_PULS_LONGNESS, 5, lenght_PULS_LONGNESS);              
+ 798   2                    write_20x32_Arial_String(str_PULS_LONGNESS,  5, 0x30, 0x1F, 0x06);
+ 799   2                    break;
+ 800   2            case 62:lenght_U_PERCENT = (int)(log10(U_PERCENT) + 1);             
+ 801   2                    sprintf(str_U_PERCENT,"%d",U_PERCENT);              
+ 802   2                    swingToEndArr(str_U_PERCENT, 5, lenght_U_PERCENT);              
+ 803   2                    write_20x32_Arial_String(str_U_PERCENT,      5, 0x30, 0x00, 0x06);      
+ 804   2                    
+ 805   2                    lenght_PULS_LONGNESS = (int)(log10(PULS_LONGNESS) + 1);             
+ 806   2                    sprintf(str_PULS_LONGNESS,"%d",PULS_LONGNESS);              
+ 807   2                    swingToEndArr(str_PULS_LONGNESS, 5, lenght_PULS_LONGNESS);              
+ 808   2                    write_20x32_Arial_String(str_PULS_LONGNESS,  5, 0x30, 0x1F, 0x0F);
+ 809   2      
+ 810   2                    break;
+ 811   2            default:break;
+ 812   2          } 
+ 813   1      }
+ 814          
+ 815          
+ 816          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   9750    ----
+   CONSTANT SIZE    =   1275    ----
+   XDATA SIZE       =     74    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4      38
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

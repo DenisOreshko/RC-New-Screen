@@ -1,0 +1,145 @@
+C51 COMPILER V9.56.0.0   INDICATION                                                        06/03/2021 14:52:33 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE INDICATION
+OBJECT MODULE PLACED IN .\Objects\Indication.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE Indication.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRIN
+                    -T(.\Listings\Indication.lst) TABS(2) OBJECT(.\Objects\Indication.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          #include <DeviceParameters.h>
+   3          #include <SFRPage.h>
+   4          #include <Delays.h>
+   5          sbit A14 = P5^6;
+   6          sbit A15 = P5^7;
+   7          sbit DOIDGREEN = P1^6;
+   8          
+   9          xdata unsigned char P4_REG3 = 0xFF;
+  10          xdata unsigned char P4_REG4 = 0xFF;
+  11          xdata unsigned char trigger = 0;
+  12          
+  13          void REG3_On(){
+  14   1        SFRPAGE = 0x0F;
+  15   1        A14 = 0;
+  16   1        
+  17   1      }
+  18          void REG3_Off(){
+  19   1        SFRPAGE = 0x0F;
+  20   1        A14 = 1;
+  21   1      }
+  22          
+  23          void REG4_On(){
+  24   1        SFRPAGE = 0x0F;
+  25   1        A15 = 0;
+  26   1      }
+  27          void REG4_Off(){
+  28   1        SFRPAGE = 0x0F;
+  29   1        A15 = 1;
+  30   1      }
+  31          
+  32          void Timer2_Interrupt(void) interrupt 5{
+  33   1        SFRPAGE = TMR2_PAGE;
+  34   1        TF2 = 0;
+  35   1        
+  36   1        if(trigger){
+  37   2          REG4_Off();
+  38   2          REG3_On();
+  39   2          P4 = P4_REG3;
+  40   2          
+  41   2      
+  42   2        }else{
+  43   2          REG3_Off();
+  44   2          REG4_On();
+  45   2          P4 = P4_REG4;
+  46   2        }
+  47   1        trigger = ~trigger;
+  48   1        DOIDGREEN = ~DOIDGREEN; 
+  49   1      }
+  50          void updateIndication(){
+  51   1        SFRPAGE = 0x0F;
+  52   1        
+  53   1        switch(LAMP_STATE){
+  54   2            case 0x00: P4_REG3|=1<<0;   P4_REG4|=1<<0;   break;//setLampDiod_Off();
+C51 COMPILER V9.56.0.0   INDICATION                                                        06/03/2021 14:52:33 PAGE 2   
+
+  55   2            case 0x01: P4_REG3&=~(1<<0);P4_REG4|=1<<0;   break;//setLampDiod_Red();
+  56   2            case 0x03: P4_REG3|=1<<0;   P4_REG4&=~(1<<0);break;//setLampDiod_Green();
+  57   2            default: break;
+  58   2        }
+  59   1        switch(SHUTTER1_STATE){
+  60   2            case 0x00: P4_REG3|=(1<<1); P4_REG4|=1<<1;break;//setShutter1Diod_Off();
+  61   2            case 0x01: P4_REG3&=~(1<<1);P4_REG4|=1<<1;break;//setShutter1Diod_On();                 
+  62   2            default: break;
+  63   2        }
+  64   1        switch(QSW1_STATE){
+  65   2            case 0x00: P4_REG3|=(1<<2); P4_REG4|=1<<2;break;//setQSW1Diod_Off();
+  66   2            case 0x01: P4_REG3&=~(1<<2);P4_REG4|=1<<2;break;//setQSW1Diod_On();
+  67   2            default: break;
+  68   2        }
+  69   1        switch(LAMP_OPTION){
+  70   2            case 0x01: P4_REG3&=~(1<<3);P4_REG4|=1<<3;//setLampIntDiod_On();
+  71   2                       P4_REG3|=(1<<4); P4_REG4|=1<<4;//setLampExtDiod_Off();
+  72   2                       P4_REG3|=(1<<5); P4_REG4|=1<<5;//setLampSingleDiod_Off();
+  73   2                       break;
+  74   2            case 0x02: P4_REG3|=(1<<3); P4_REG4|=1<<3;//setLampIntDiod_Off();
+  75   2                       P4_REG3&=~(1<<4);P4_REG4|=1<<4;//setLampExtDiod_On();
+  76   2                       P4_REG3|=(1<<5); P4_REG4|=1<<5;//setLampSingleDiod_Off();
+  77   2                       break;
+  78   2            case 0x03: P4_REG3|=(1<<3); P4_REG4|=1<<3;//setLampIntDiod_Off();
+  79   2                       P4_REG3|=(1<<4); P4_REG4|=1<<4;//setLampExtDiod_Off();
+  80   2                       P4_REG3&=~(1<<5);P4_REG4|=1<<5;//setLampSingleDiod_On();
+  81   2                       break;
+  82   2            default: break;
+  83   2        }
+  84   1        switch(QSW_OPTION){
+  85   2            case 0x00: P4_REG3|=1<<6;
+  86   2                                     P4_REG4&=~(1<<1);//setQswFrDiod_On();
+  87   2                                     P4_REG4|=1<<2;
+  88   2                                     P4_REG4|=1<<3;
+  89   2                                     P4_REG4|=1<<4;
+  90   2                       break;                
+  91   2            case 0x01: P4_REG3&=~(1<<6);              //setQswIntDiod_On();                 
+  92   2                                     P4_REG4|=1<<1;
+  93   2                                     P4_REG4|=1<<2;
+  94   2                                     P4_REG4|=1<<3;
+  95   2                                     P4_REG4|=1<<4;
+  96   2                       break;
+  97   2            case 0x02: P4_REG3|=1<<6; 
+  98   2                                     P4_REG4|=1<<1;
+  99   2                                     P4_REG4&=~(1<<2);//setQswExt1Diod_On();
+ 100   2                                     P4_REG4|=1<<3;
+ 101   2                                     P4_REG4|=1<<4;
+ 102   2                        break;
+ 103   2            case 0x03: P4_REG3|=1<<6; 
+ 104   2                                     P4_REG4|=1<<1;
+ 105   2                                     P4_REG4|=1<<2;
+ 106   2                                     P4_REG4&=~(1<<3);//setQswExt2Diod_On();
+ 107   2                                     P4_REG4|=1<<4;
+ 108   2                        break;
+ 109   2            case 0x04: P4_REG3|=1<<6; 
+ 110   2                                     P4_REG4|=1<<1;
+ 111   2                                     P4_REG4|=1<<2;
+ 112   2                                     P4_REG4|=1<<3;
+ 113   2                                     P4_REG4&=~(1<<4);//setQswSingleDiod_On();
+ 114   2                       break;
+ 115   2            default: break;
+ 116   2        }
+C51 COMPILER V9.56.0.0   INDICATION                                                        06/03/2021 14:52:33 PAGE 3   
+
+ 117   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    410    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      3    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

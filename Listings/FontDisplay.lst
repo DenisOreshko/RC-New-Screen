@@ -1,0 +1,2451 @@
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE FONTDISPLAY
+OBJECT MODULE PLACED IN .\Objects\FontDisplay.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE FontDisplay.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRI
+                    -NT(.\Listings\FontDisplay.lst) TABS(2) OBJECT(.\Objects\FontDisplay.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          #include <Display.h>
+   3          #include <stdio.h>
+   4          #include <string.h>
+   5          #include <math.h>
+   6          #include <Delays.h>
+   7          
+   8          sbit MF_SCLK = P3^0;
+   9          sbit MF_SI   = P3^1;
+  10          sbit MF_CS2  = P3^2;
+  11          sbit MF_SO   = P3^3;
+  12          
+  13          xdata unsigned char read_command = 0x0B;
+  14          xdata unsigned long int  Address = 0;
+  15          xdata unsigned char address_BYTE1_MSB = 0x00;
+  16          xdata unsigned char address_BYTE2 = 0x00;
+  17          xdata unsigned char address_BYTE3_LSB = 0x00;
+  18          xdata unsigned char dummyBYTE = 0xFF;
+  19          xdata unsigned char font5x7[8], font7x8[8], font8x16[16], font16x16[34], fontGB2312[32];
+  20          xdata unsigned int f = 0, t = 0, dr = 0;
+  21          xdata int r = 0;
+  22          xdata unsigned char MSB = 0;
+  23          xdata unsigned char LSB = 0;
+  24          xdata unsigned char draw_byte = 0x00;
+  25          xdata unsigned char ReadByte = 0x00;
+  26          
+  27          code unsigned char space_5x7_ASCII[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+  28          code unsigned char A_5x7_ASCII[8] = {0x7E,0x11,0x11,0x11,0x7E,0x00,0x00,0x00};
+  29          code unsigned char B_5x7_ASCII[8] = {0x7F,0x49,0x49,0x49,0x36,0x00,0x00,0x00};
+  30          code unsigned char C_5x7_ASCII[8] = {0x3E,0x41,0x41,0x41,0x22,0x00,0x00,0x00};
+  31          code unsigned char D_5x7_ASCII[8] = {0x7F,0x41,0x41,0x22,0x1C,0x00,0x00,0x00};
+  32          code unsigned char E_5x7_ASCII[8] = {0x7F,0x49,0x49,0x49,0x41,0x00,0x00,0x00};
+  33          code unsigned char F_5x7_ASCII[8] = {0x7F,0x09,0x09,0x09,0x01,0x00,0x00,0x00};
+  34          code unsigned char G_5x7_ASCII[8] = {0x3E,0x41,0x49,0x49,0x7A,0x00,0x00,0x00};
+  35          code unsigned char H_5x7_ASCII[8] = {0x7F,0x08,0x08,0x08,0x7F,0x00,0x00,0x00};
+  36          code unsigned char I_5x7_ASCII[8] = {0x00,0x41,0x7F,0x41,0x00,0x00,0x00,0x00};
+  37          code unsigned char J_5x7_ASCII[8] = {0x20,0x40,0x41,0x3F,0x01,0x00,0x00,0x00};
+  38          code unsigned char K_5x7_ASCII[8] = {0x7F,0x08,0x14,0x22,0x41,0x00,0x00,0x00};
+  39          code unsigned char L_5x7_ASCII[8] = {0x7F,0x40,0x40,0x40,0x40,0x00,0x00,0x00};
+  40          code unsigned char M_5x7_ASCII[8] = {0x7F,0x02,0x0C,0x02,0x7F,0x00,0x00,0x00};
+  41          code unsigned char N_5x7_ASCII[8] = {0x7F,0x04,0x08,0x10,0x7F,0x00,0x00,0x00};
+  42          code unsigned char O_5x7_ASCII[8] = {0x3E,0x41,0x41,0x41,0x3E,0x00,0x00,0x00};
+  43          code unsigned char P_5x7_ASCII[8] = {0x7F,0x09,0x09,0x09,0x06,0x00,0x00,0x00};
+  44          code unsigned char Q_5x7_ASCII[8] = {0x3E,0x41,0x51,0x21,0x5E,0x00,0x00,0x00};
+  45          code unsigned char R_5x7_ASCII[8] = {0x7F,0x09,0x19,0x29,0x46,0x00,0x00,0x00};
+  46          code unsigned char S_5x7_ASCII[8] = {0x46,0x49,0x49,0x49,0x31,0x00,0x00,0x00};
+  47          code unsigned char T_5x7_ASCII[8] = {0x01,0x01,0x7F,0x01,0x01,0x00,0x00,0x00};
+  48          code unsigned char U_5x7_ASCII[8] = {0x3F,0x40,0x40,0x40,0x3F,0x00,0x00,0x00};
+  49          code unsigned char V_5x7_ASCII[8] = {0x1F,0x20,0x40,0x20,0x1F,0x00,0x00,0x00};
+  50          code unsigned char W_5x7_ASCII[8] = {0x3F,0x40,0x38,0x40,0x3F,0x00,0x00,0x00};
+  51          code unsigned char X_5x7_ASCII[8] = {0x63,0x14,0x08,0x14,0x63,0x00,0x00,0x00};
+  52          code unsigned char Y_5x7_ASCII[8] = {0x07,0x08,0x70,0x08,0x07,0x00,0x00,0x00};
+  53          code unsigned char Z_5x7_ASCII[8] = {0x61,0x51,0x49,0x45,0x43,0x00,0x00,0x00};
+  54          code unsigned char left_5x7_ASCII[8] = {0x08,0x14,0x22,0x41,0x00,0x00,0x00,0x00};
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 2   
+
+  55          code unsigned char right_5x7_ASCII[8] = {0x00,0x41,0x22,0x14,0x08,0x00,0x00,0x00};
+  56          code unsigned char quote_5x7_ASCII[8] = {0x00,0x07,0x00,0x07,0x00,0x00,0x00,0x00};
+  57          code unsigned char zpt_5x7_ASCII[8] = {0x00,0x50,0x30,0x00,0x00,0x00,0x00,0x00};
+  58          
+  59          code unsigned char space_8x16_ASCII[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00,0x00};
+  60          code unsigned char A_8x16_ASCII[16] = {0x00,0x00,0xE0,0x10,0xE0,0x00,0x00,0x00,0x78,0x07,0x04,0x04,0x04,0x
+             -07,0x78,0x00};
+  61          code unsigned char B_8x16_ASCII[16] = {0x00,0xF0,0x10,0x10,0x10,0x10,0xE0,0x00,0x00,0x7F,0x42,0x42,0x42,0x
+             -45,0x38,0x00};
+  62          code unsigned char C_8x16_ASCII[16] = {0xC0,0x20,0x10,0x10,0x10,0x20,0x40,0x00,0x1F,0x20,0x40,0x40,0x40,0x
+             -20,0x10,0x00};
+  63          code unsigned char D_8x16_ASCII[16] = {0x00,0xF0,0x10,0x10,0x10,0x20,0xC0,0x00,0x00,0x7F,0x40,0x40,0x40,0x
+             -20,0x1F,0x00};
+  64          code unsigned char E_8x16_ASCII[16] = {0x00,0xF0,0x10,0x10,0x10,0x10,0x10,0x00,0x00,0x7F,0x42,0x42,0x42,0x
+             -42,0x40,0x00};
+  65          code unsigned char F_8x16_ASCII[16] = {0x00,0xF0,0x10,0x10,0x10,0x10,0x10,0x00,0x00,0x7F,0x01,0x01,0x01,0x
+             -01,0x00,0x00};
+  66          code unsigned char G_8x16_ASCII[16] = {0xC0,0x20,0x10,0x10,0x10,0x20,0x40,0x00,0x1F,0x20,0x40,0x40,0x42,0x
+             -22,0x7E,0x00};
+  67          code unsigned char H_8x16_ASCII[16] = {0x00,0xF0,0x00,0x00,0x00,0x00,0xF0,0x00,0x00,0x7F,0x02,0x02,0x02,0x
+             -02,0x7F,0x00};
+  68          code unsigned char I_8x16_ASCII[16] = {0x00,0x10,0x10,0xF0,0x10,0x10,0x00,0x00,0x00,0x40,0x40,0x7F,0x40,0x
+             -40,0x00,0x00};
+  69          code unsigned char J_8x16_ASCII[16] = {0x00,0x00,0x10,0x10,0xF0,0x10,0x10,0x00,0x30,0x40,0x40,0x40,0x3F,0x
+             -00,0x00,0x00};
+  70          code unsigned char K_8x16_ASCII[16] = {0x00,0xF0,0x00,0x80,0x60,0x10,0x00,0x00,0x00,0x7F,0x02,0x0D,0x30,0x
+             -40,0x00,0x00};
+  71          code unsigned char L_8x16_ASCII[16] = {0x00,0xF0,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x7F,0x40,0x40,0x40,0x
+             -70,0x00,0x00};
+  72          code unsigned char M_8x16_ASCII[16] = {0xF0,0x60,0x80,0x00,0x80,0x60,0xF0,0x00,0x7F,0x00,0x03,0x06,0x03,0x
+             -00,0x7F,0x00};
+  73          code unsigned char N_8x16_ASCII[16] = {0x00,0xF0,0x60,0x80,0x00,0x00,0xF0,0x00,0x00,0x7F,0x00,0x01,0x0E,0x
+             -30,0x7F,0x00};
+  74          code unsigned char O_8x16_ASCII[16] = {0xC0,0x20,0x10,0x10,0x10,0x20,0xC0,0x00,0x1F,0x20,0x40,0x40,0x40,0x
+             -20,0x1F,0x00};
+  75          code unsigned char P_8x16_ASCII[16] = {0x00,0xF0,0x10,0x10,0x10,0x20,0xC0,0x00,0x00,0x7F,0x02,0x02,0x02,0x
+             -01,0x00,0x00};
+  76          code unsigned char Q_8x16_ASCII[16] = {0xC0,0x20,0x10,0x10,0x10,0x20,0xC0,0x00,0x1F,0x20,0x40,0x48,0x50,0x
+             -20,0x5F,0x00};
+  77          code unsigned char R_8x16_ASCII[16] = {0x00,0xF0,0x10,0x10,0x10,0x20,0xC0,0x00,0x00,0x7F,0x02,0x06,0x1A,0x
+             -21,0x40,0x00};
+  78          code unsigned char S_8x16_ASCII[16] = {0xC0,0x20,0x10,0x10,0x10,0x20,0x40,0x00,0x10,0x21,0x42,0x42,0x44,0x
+             -24,0x18,0x00};
+  79          code unsigned char T_8x16_ASCII[16] = {0x10,0x10,0x10,0xF0,0x10,0x10,0x10,0x00,0x00,0x00,0x00,0x7F,0x00,0x
+             -00,0x00,0x00};
+  80          code unsigned char U_8x16_ASCII[16] = {0xF0,0x00,0x00,0x00,0x00,0x00,0xF0,0x00,0x1F,0x20,0x40,0x40,0x40,0x
+             -20,0x1F,0x00};
+  81          code unsigned char V_8x16_ASCII[16] = {0x70,0x80,0x00,0x00,0x00,0x80,0x70,0x00,0x00,0x03,0x1C,0x60,0x1C,0x
+             -03,0x00,0x00};
+  82          code unsigned char W_8x16_ASCII[16] = {0xF0,0x00,0x00,0xE0,0x00,0x00,0xF0,0x00,0x7F,0x30,0x0E,0x01,0x0E,0x
+             -30,0x7F,0x00};
+  83          code unsigned char X_8x16_ASCII[16] = {0x10,0x60,0x80,0x00,0x80,0x60,0x10,0x00,0x40,0x30,0x0D,0x02,0x0D,0x
+             -30,0x40,0x00};
+  84          code unsigned char Y_8x16_ASCII[16] = {0x30,0xC0,0x00,0x00,0x00,0xC0,0x30,0x00,0x00,0x00,0x03,0x7C,0x03,0x
+             -00,0x00,0x00};
+  85          code unsigned char Z_8x16_ASCII[16] = {0x10,0x10,0x10,0x10,0x10,0xD0,0x30,0x00,0x40,0x60,0x58,0x46,0x41,0x
+             -40,0x40,0x00};
+  86          code unsigned char a__8x16_ASCII[16] = {0x00,0x80,0x80,0x80,0x80,0x80,0x00,0x00,0x39,0x44,0x44,0x44,0x44,0
+             -x28,0x7F,0x00};
+  87          code unsigned char b__8x16_ASCII[16] = {0x00,0xF8,0x00,0x80,0x80,0x00,0x00,0x00,0x00,0x7F,0x21,0x40,0x40,0
+             -x21,0x1E,0x00};
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 3   
+
+  88          code unsigned char c__8x16_ASCII[16] = {0x00,0x00,0x80,0x80,0x80,0x80,0x00,0x00,0x1E,0x21,0x40,0x40,0x40,0
+             -x40,0x21,0x00};
+  89          code unsigned char d__8x16_ASCII[16] = {0x00,0x00,0x80,0x80,0x00,0xF8,0x00,0x00,0x1E,0x21,0x40,0x40,0x21,0
+             -x7F,0x00,0x00};
+  90          code unsigned char e__8x16_ASCII[16] = {0x00,0x00,0x80,0x80,0x80,0x00,0x00,0x00,0x1E,0x25,0x44,0x44,0x44,0
+             -x45,0x26,0x00};
+  91          code unsigned char f__8x16_ASCII[16] = {0x00,0x80,0x80,0xF8,0x84,0x84,0x18,0x00,0x00,0x00,0x00,0x7F,0x00,0
+             -x00,0x00,0x00};
+  92          code unsigned char g__8x16_ASCII[16] = {0x00,0xE0,0x10,0x10,0x20,0xF0,0x00,0x00,0x00,0x23,0x44,0x44,0x42,0
+             -x3F,0x00,0x00};
+  93          code unsigned char h__8x16_ASCII[16] = {0x00,0xF8,0x00,0x80,0x80,0x80,0x00,0x00,0x00,0x7F,0x01,0x00,0x00,0
+             -x00,0x7F,0x00};
+  94          code unsigned char i__8x16_ASCII[16] = {0x00,0x00,0x00,0x98,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x7F,0x00,0
+             -x00,0x00,0x00};
+  95          code unsigned char j__8x16_ASCII[16] = {0x00,0x00,0x00,0x00,0xF3,0x00,0x00,0x00,0x00,0x20,0x40,0x40,0x3F,0
+             -x00,0x00,0x00};
+  96          code unsigned char k__8x16_ASCII[16] = {0x00,0xF0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x7F,0x08,0x14,0x22,0
+             -x41,0x00,0x00};
+  97          code unsigned char l__8x16_ASCII[16] = {0x00,0x00,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x3F,0x40,0x40,0
+             -x20,0x00,0x00};
+  98          code unsigned char m__8x16_ASCII[16] = {0x80,0x00,0x80,0x00,0x80,0x80,0x00,0x00,0x7F,0x01,0x00,0x7F,0x00,0
+             -x00,0x7F,0x00};
+  99          code unsigned char n__8x16_ASCII[16] = {0x00,0x80,0x00,0x80,0x80,0x80,0x00,0x00,0x00,0x7F,0x01,0x00,0x00,0
+             -x00,0x7F,0x00};
+ 100          code unsigned char o__8x16_ASCII[16] = {0x00,0x00,0x80,0x80,0x80,0x00,0x00,0x00,0x1E,0x21,0x40,0x40,0x40,0
+             -x21,0x1E,0x00};
+ 101          code unsigned char p__8x16_ASCII[16] = {0x00,0xF0,0x20,0x10,0x10,0x20,0xC0,0x00,0x00,0x7F,0x04,0x08,0x08,0
+             -x04,0x03,0x00};
+ 102          code unsigned char q__8x16_ASCII[16] = {0xC0,0x20,0x10,0x10,0x20,0xF0,0x00,0x00,0x03,0x04,0x08,0x08,0x04,0
+             -x7F,0x00,0x00};
+ 103          code unsigned char r__8x16_ASCII[16] = {0x00,0x00,0x80,0x00,0x80,0x80,0x00,0x00,0x00,0x00,0x00,0x7F,0x00,0
+             -x00,0x01,0x00};
+ 104          code unsigned char s__8x16_ASCII[16] = {0x00,0x00,0x80,0x80,0x80,0x80,0x00,0x00,0x00,0x23,0x44,0x44,0x48,0
+             -x48,0x31,0x00};
+ 105          code unsigned char t__8x16_ASCII[16] = {0x00,0x80,0x80,0xF0,0x80,0x80,0x00,0x00,0x00,0x00,0x00,0x3F,0x40,0
+             -x40,0x20,0x00};
+ 106          code unsigned char u__8x16_ASCII[16] = {0x00,0x80,0x00,0x00,0x00,0x00,0x80,0x00,0x00,0x3F,0x40,0x40,0x40,0
+             -x20,0x7F,0x00};
+ 107          code unsigned char v__8x16_ASCII[16] = {0x80,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x01,0x06,0x18,0x60,0x18,0
+             -x06,0x01,0x00};
+ 108          code unsigned char w__8x16_ASCII[16] = {0x80,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x1F,0x60,0x18,0x07,0x18,0
+             -x60,0x1F,0x00};
+ 109          code unsigned char x__8x16_ASCII[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x41,0x22,0x14,0x08,0x14,0
+             -x22,0x41,0x00};
+ 110          code unsigned char y__8x16_ASCII[16] = {0x60,0x80,0x00,0x00,0x00,0x80,0x60,0x00,0x40,0x21,0x16,0x08,0x06,0
+             -x01,0x00,0x00};
+ 111          code unsigned char z__8x16_ASCII[16] = {0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x00,0x40,0x60,0x50,0x48,0x44,0
+             -x42,0x41,0x00};
+ 112          code unsigned char number_0_8x16_ASCII[16] = {0x00,0xE0,0x10,0x08,0x08,0x10,0xE0,0x00,0x00,0x1F,0x20,0x40,
+             -0x40,0x20,0x1F,0x00};
+ 113          code unsigned char number_1_8x16_ASCII[16] = {0x00,0x00,0x20,0x10,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x7F,0x00,0x00,0x00};
+ 114          code unsigned char number_2_8x16_ASCII[16] = {0x20,0x10,0x08,0x08,0x08,0x10,0xE0,0x00,0x60,0x50,0x48,0x44,
+             -0x42,0x41,0x40,0x00};
+ 115          code unsigned char number_3_8x16_ASCII[16] = {0x08,0x88,0xC8,0x28,0x18,0x08,0x00,0x00,0x20,0x40,0x40,0x41,
+             -0x21,0x1E,0x00,0x00};
+ 116          code unsigned char number_4_8x16_ASCII[16] = {0x00,0x00,0xC0,0x30,0x88,0x00,0x00,0x00,0x0C,0x0B,0x08,0x08,
+             -0x7F,0x08,0x08,0x00};
+ 117          code unsigned char number_5_8x16_ASCII[16] = {0x00,0xF8,0x88,0x88,0x88,0x08,0x08,0x00,0x00,0x20,0x40,0x40,
+             -0x40,0x21,0x1E,0x00};
+ 118          code unsigned char number_6_8x16_ASCII[16] = {0x00,0xC0,0x20,0x10,0x08,0x00,0x00,0x00,0x1F,0x22,0x41,0x41,
+             -0x41,0x22,0x1C,0x00};
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 4   
+
+ 119          code unsigned char number_7_8x16_ASCII[16] = {0x08,0x08,0x08,0x08,0x88,0x68,0x18,0x00,0x00,0x00,0x00,0x7C,
+             -0x03,0x00,0x00,0x00};
+ 120          code unsigned char number_8_8x16_ASCII[16] = {0x60,0x90,0x08,0x08,0x08,0x90,0x60,0x00,0x1C,0x22,0x41,0x41,
+             -0x41,0x22,0x1C,0x00};
+ 121          code unsigned char number_9_8x16_ASCII[16] = {0xE0,0x10,0x08,0x08,0x08,0x10,0xE0,0x00,0x00,0x01,0x42,0x22,
+             -0x12,0x0D,0x03,0x00};
+ 122          code unsigned char zpt_8x16_ASCII[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x58,0x38,0x00,
+             -0x00,0x00,0x00};
+ 123          code unsigned char tck_8x16_ASCII[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x30,0x30,0x00,
+             -0x00,0x00,0x00};
+ 124          code unsigned char double_tck_8x16_ASCII[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x33,0x3
+             -3,0x00,0x00,0x00,0x00};
+ 125          code unsigned char minus_8x16_ASCII[16] = {0x00,0x80,0x80,0x80,0x80,0x80,0x80,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00,0x00};
+ 126          code unsigned char ravno_8x16_ASCII[16] = {0x00,0x40,0x40,0x40,0x40,0x40,0x40,0x00,0x00,0x02,0x02,0x02,0x0
+             -2,0x02,0x02,0x00};
+ 127          code unsigned char plus_8x16_ASCII[16] = {0x80,0x80,0x80,0xF8,0x80,0x80,0x80,0x00,0x00,0x00,0x00,0x0F,0x00
+             -,0x00,0x00,0x00};
+ 128          code unsigned char skobka1_8x16_ASCII[16] = {0x00,0x00,0xE0,0x18,0x04,0x02,0x00,0x00,0x00,0x00,0x07,0x18,0
+             -x20,0x40,0x00,0x00};
+ 129          code unsigned char skobka2_8x16_ASCII[16] = {0x00,0x02,0x04,0x18,0xE0,0x00,0x00,0x00,0x00,0x40,0x20,0x18,0
+             -x07,0x00,0x00,0x00};
+ 130          code unsigned char kosaya_right_8x16_ASCII[16] = {0x00,0x00,0x00,0x80,0x60,0x18,0x06,0x00,0x60,0x18,0x06,0
+             -x01,0x00,0x00,0x00,0x00};
+ 131          code unsigned char procent_8x16_ASCII[16] = {0x3C,0x42,0x42,0xBC,0x60,0x10,0x0C,0x00,0xC0,0x30,0x0C,0x7A,0
+             -x84,0x84,0x78,0x00};
+ 132          
+ 133          
+ 134          code unsigned char space_WidthAdjusted_Arial_ASCII[34] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00,0x00,0x00,0x00,0x00,
+ 135                                                                 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 136          code unsigned char A_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0B,0x00,0x00,0x00,0xE0,0xF8,0x18,0xF8,0xE0,0x
+             -00,0x00,0x00,0x00,0x00,0x00,
+ 137                                                                 0x00,0x00,0x40,0x78,0x3F,0x0F,0x0C,0x0C,0x0C,0x0F,0x3F,0x78,0x40,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 138          code unsigned char B_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xF8,0xF8,0x18,0x18,0x18,0x18,0x18,0x
+             -F8,0xF0,0x00,0x00,0x00,0x00,
+ 139                                                                 0x00,0x00,0x00,0x7F,0x7F,0x63,0x63,0x63,0x63,0x63,0x67,0x3E,0x1C,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 140          code unsigned char C_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xC0,0xF0,0x30,0x18,0x18,0x18,0x18,0x
+             -38,0x70,0x20,0x00,0x00,0x00,
+ 141                                                                 0x00,0x00,0x00,0x0F,0x3F,0x30,0x60,0x60,0x60,0x60,0x70,0x38,0x10,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 142          code unsigned char D_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xF8,0xF8,0x18,0x18,0x18,0x18,0x18,0x
+             -30,0xF0,0xC0,0x00,0x00,0x00,
+ 143                                                                 0x00,0x00,0x00,0x7F,0x7F,0x60,0x60,0x60,0x60,0x60,0x30,0x3F,0x0F,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 144          code unsigned char E_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0B,0x00,0xF8,0xF8,0x18,0x18,0x18,0x18,0x18,0x
+             -18,0x18,0x00,0x00,0x00,0x00,
+ 145                                                                 0x00,0x00,0x00,0x7F,0x7F,0x63,0x63,0x63,0x63,0x63,0x63,0x63,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 146          code unsigned char F_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xF8,0xF8,0x18,0x18,0x18,0x18,0x18,0x
+             -18,0x00,0x00,0x00,0x00,0x00,
+ 147                                                                 0x00,0x00,0x00,0x7F,0x7F,0x03,0x03,0x03,0x03,0x03,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 148          code unsigned char G_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xC0,0xF0,0x30,0x18,0x18,0x18,0x18,0x
+             -38,0x70,0x20,0x00,0x00,0x00,
+ 149                                                                 0x00,0x00,0x00,0x0F,0x3F,0x30,0x60,0x60,0x66,0x66,0x76,0x3E,0x1E,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 150          code unsigned char H_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xF8,0xF8,0x00,0x00,0x00,0x00,0x00,0x
+             -00,0xF8,0xF8,0x00,0x00,0x00,
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 5   
+
+ 151                                                                 0x00,0x00,0x00,0x7F,0x7F,0x03,0x03,0x03,0x03,0x03,0x03,0x7F,0x7F,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 152          code unsigned char I_WidthAdjusted_Arial_ASCII[34] = {0x00,0x04,0x00,0xF8,0xF8,0x00,0x00,0x00,0x00,0x00,0x
+             -00,0x00,0x00,0x00,0x00,0x00,
+ 153                                                                 0x00,0x00,0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 154          code unsigned char J_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0x00,0x00,0x00,0x00,0x00,0xF8,0xF8,0x
+             -00,0x00,0x00,0x00,0x00,0x00,
+ 155                                                                 0x00,0x00,0x18,0x38,0x70,0x60,0x60,0x70,0x3F,0x1F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 156          code unsigned char K_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xF8,0xF8,0x00,0x00,0x80,0xC0,0x60,0x
+             -30,0x18,0x08,0x00,0x00,0x00,
+ 157                                                                 0x00,0x00,0x00,0x7F,0x7F,0x06,0x03,0x01,0x03,0x03,0x0F,0x3C,0x70,0x60,0x00,0x0
+             -0,0x00,0x00};
+ 158          code unsigned char L_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xF8,0xF8,0x00,0x00,0x00,0x00,0x00,0x
+             -00,0x00,0x00,0x00,0x00,0x00,
+ 159                                                                 0x00,0x00,0x00,0x7F,0x7F,0x60,0x60,0x60,0x60,0x60,0x60,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 160          code unsigned char M_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0D,0x00,0xF8,0xF8,0x78,0xE0,0x00,0x00,0x00,0x
+             -E0,0x78,0xF8,0xF8,0x00,0x00,
+ 161                                                                 0x00,0x00,0x00,0x7F,0x7F,0x00,0x07,0x3F,0x78,0x3F,0x07,0x00,0x7F,0x7F,0x00,0x0
+             -0,0x00,0x00};
+ 162          code unsigned char N_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xF8,0xF8,0x70,0xE0,0x80,0x00,0x00,0x
+             -00,0xF8,0xF8,0x00,0x00,0x00,
+ 163                                                                 0x00,0x00,0x00,0x7F,0x7F,0x00,0x00,0x03,0x07,0x1C,0x38,0x7F,0x7F,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 164          code unsigned char O_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xC0,0xF0,0x30,0x18,0x18,0x18,0x18,0x
+             -30,0xF0,0xC0,0x00,0x00,0x00,
+ 165                                                                 0x00,0x00,0x00,0x0F,0x3F,0x30,0x60,0x60,0x60,0x60,0x30,0x3F,0x0F,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 166          code unsigned char P_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0B,0x00,0xF8,0xF8,0x18,0x18,0x18,0x18,0xB8,0x
+             -F0,0xE0,0x00,0x00,0x00,0x00,
+ 167                                                                 0x00,0x00,0x00,0x7F,0x7F,0x03,0x03,0x03,0x03,0x03,0x01,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 168          code unsigned char Q_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xC0,0xF0,0x18,0x18,0x18,0x18,0x18,0x
+             -30,0xF0,0xC0,0x00,0x00,0x00,
+ 169                                                                 0x00,0x00,0x00,0x0F,0x3F,0x30,0x60,0x68,0x78,0x30,0x70,0xFF,0x8F,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 170          code unsigned char R_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xF8,0xF8,0x18,0x18,0x18,0x18,0x18,0x
+             -B8,0xF0,0xE0,0x00,0x00,0x00,
+ 171                                                                 0x00,0x00,0x00,0x7F,0x7F,0x03,0x03,0x03,0x07,0x0F,0x3D,0x79,0x60,0x40,0x00,0x0
+             -0,0x00,0x00};
+ 172          code unsigned char S_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0B,0x00,0xE0,0xF0,0x98,0x98,0x18,0x18,0x38,0x
+             -70,0x60,0x00,0x00,0x00,0x00,
+ 173                                                                 0x00,0x00,0x00,0x18,0x39,0x71,0x63,0x63,0x63,0x77,0x3E,0x1C,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 174          code unsigned char T_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x18,0x18,0x18,0x18,0xF8,0xF8,0x18,0x18,0x
+             -18,0x18,0x00,0x00,0x00,0x00,
+ 175                                                                 0x00,0x00,0x00,0x00,0x00,0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 176          code unsigned char U_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0C,0x00,0xF8,0xF8,0x00,0x00,0x00,0x00,0x00,0x
+             -00,0xF8,0xF8,0x00,0x00,0x00,
+ 177                                                                 0x00,0x00,0x00,0x1F,0x3F,0x70,0x60,0x60,0x60,0x60,0x70,0x3F,0x1F,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 178          code unsigned char V_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0B,0x18,0x78,0xE0,0x80,0x00,0x00,0x00,0x80,0x
+             -E0,0x78,0x18,0x00,0x00,0x00,
+ 179                                                                 0x00,0x00,0x00,0x00,0x03,0x0F,0x7C,0x70,0x7C,0x0F,0x03,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 180          code unsigned char W_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0F,0x18,0xF8,0xF0,0x00,0x00,0xC0,0xF8,0x38,0x
+             -F8,0xC0,0x00,0x00,0xE0,0xF8,
+ 181                                                                 0x18,0x00,0x00,0x00,0x07,0x7F,0x78,0x7F,0x07,0x00,0x07,0x7F,0x78,0x7F,0x0F,0x0
+             -0,0x00,0x00};
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 6   
+
+ 182          code unsigned char X_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0B,0x00,0x18,0x38,0xF0,0xC0,0x80,0xC0,0xF0,0x
+             -38,0x18,0x00,0x00,0x00,0x00,
+ 183                                                                 0x00,0x00,0x00,0x60,0x70,0x3C,0x0F,0x07,0x0F,0x3C,0x70,0x60,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 184          code unsigned char Y_WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x18,0x38,0xF0,0xC0,0x00,0x00,0xC0,0xF0,0x
+             -38,0x18,0x00,0x00,0x00,0x00,
+ 185                                                                 0x00,0x00,0x00,0x00,0x00,0x01,0x7F,0x7F,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00,0x00};
+ 186          code unsigned char Z_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0x18,0x18,0x18,0x98,0xD8,0xF8,0x38,0x
+             -18,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 187                                                                           0x60,0x70,0x7C,0x6E,0x67,0x61,0x60,0x60,0
+             -x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+ 188          
+ 189          code unsigned char a__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0x80,0xC0,0xC0,0xC0,0xC0,0xC0,0x80,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 190                                                                            0x00,0x39,0x7D,0x6C,0x66,0x66,0x3F,0x7F,0x40,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 191          code unsigned char b__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xF8,0xF8,0x80,0xC0,0xC0,0xC0,0x80,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 192                                                                            0x00,0x7F,0x7F,0x31,0x60,0x60,0x71,0x3F,0x1F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 193          code unsigned char c__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0x00,0x80,0xC0,0xC0,0xC0,0xC0,0x80,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 194                                                                            0x00,0x1F,0x3F,0x71,0x60,0x60,0x71,0x31,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 195          code unsigned char d__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0x00,0x80,0xC0,0xC0,0xC0,0x80,0xF8,0
+             -xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 196                                                                            0x00,0x1F,0x3F,0x71,0x60,0x60,0x31,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 197          code unsigned char e__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0x00,0x80,0xC0,0xC0,0xC0,0x80,0x00,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 198                                                                            0x00,0x1F,0x3F,0x76,0x66,0x66,0x37,0x17,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 199          code unsigned char f__WidthAdjusted_Arial_ASCII[34] = {0x00,0x05,0xC0,0xF0,0xF8,0xD8,0xD8,0x00,0x00,0x00,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 200                                                                            0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 201          code unsigned char g__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xC0,0xE0,0x70,0x30,0x30,0x60,0xF0,0
+             -xF0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 202                                                                            0x00,0x67,0xEF,0xDC,0xD8,0xD8,0xCC,0xFF,0x7F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 203          code unsigned char h__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xF8,0xF8,0x80,0xC0,0xC0,0xC0,0xC0,0
+             -x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 204                                                                            0x00,0x7F,0x7F,0x01,0x00,0x00,0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 205          code unsigned char i__WidthAdjusted_Arial_ASCII[34] = {0x00,0x04,0x00,0x00,0xD8,0xD8,0x00,0x00,0x00,0x00,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 206                                                                            0x00,0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 207          code unsigned char j__WidthAdjusted_Arial_ASCII[34] = {0x00,0x04,0x00,0xF6,0xF6,0x00,0x00,0x00,0x00,0x00,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 208                                                                            0xC0,0xFF,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 209          code unsigned char k__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0xF8,0xF8,0x00,0x00,0x80,0xC0,0x40,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 210                                                                            0x00,0x7F,0x7F,0x0E,0x07,0x1F,0x78,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 211          code unsigned char l__WidthAdjusted_Arial_ASCII[34] = {0x00,0x04,0x00,0xF8,0xF8,0x00,0x00,0x00,0x00,0x00,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 212                                                                            0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 213          code unsigned char m__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0E,0x00,0xC0,0xC0,0x80,0xC0,0xC0,0xC0,0x80,0
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 7   
+
+             -x80,0xC0,0xC0,0xC0,0x80,0x00,0x00,0x00,
+ 214                                                                            0x00,0x7F,0x7F,0x01,0x00,0x00,0x7F,0x7F,0x01,0x00,0x00,0x7F,0x7F,0x00,0x0
+             -0,0x00};
+ 215          code unsigned char n__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xC0,0xC0,0x80,0xC0,0xC0,0xC0,0xC0,0
+             -x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 216                                                                            0x00,0x7F,0x7F,0x01,0x00,0x00,0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 217          code unsigned char o__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0x00,0x80,0xC0,0xC0,0xC0,0xC0,0x80,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 218                                                                            0x00,0x1F,0x3F,0x71,0x60,0x60,0x71,0x3F,0x1F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 219          code unsigned char p__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xF0,0xF0,0x60,0x30,0x30,0x70,0xE0,0
+             -xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 220                                                                            0x00,0xFF,0xFF,0x0C,0x18,0x18,0x1C,0x0F,0x07,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 221          code unsigned char q__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xC0,0xE0,0x70,0x30,0x30,0x60,0xF0,0
+             -xF0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 222                                                                            0x00,0x07,0x0F,0x1C,0x18,0x18,0x0C,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 223          code unsigned char r__WidthAdjusted_Arial_ASCII[34] = {0x00,0x06,0x00,0xC0,0xC0,0x80,0xC0,0xC0,0x00,0x00,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 224                                                                            0x00,0x7F,0x7F,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 225          code unsigned char s__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0x80,0xC0,0xC0,0xC0,0xC0,0xC0,0x80,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 226                                                                            0x00,0x33,0x77,0x66,0x6E,0x6C,0x7D,0x39,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 227          code unsigned char t__WidthAdjusted_Arial_ASCII[34] = {0x00,0x05,0xC0,0xF0,0xF8,0xC0,0xC0,0x00,0x00,0x00,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 228                                                                            0x00,0x3F,0x7F,0x60,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x7F,0x7F,0x00,0x0
+             -0,0x00};
+ 229          code unsigned char u__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0A,0x00,0xC0,0xC0,0x00,0x00,0x00,0x00,0xC0,0
+             -xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 230                                                                            0x00,0x3F,0x7F,0x60,0x60,0x60,0x30,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 231          code unsigned char v__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0xC0,0xC0,0x00,0x00,0x00,0xC0,0xC0,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 232                                                                            0x00,0x01,0x0F,0x7E,0x70,0x7E,0x0F,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 233          code unsigned char w__WidthAdjusted_Arial_ASCII[34] = {0x00,0x0D,0xC0,0xC0,0x00,0x00,0x00,0xC0,0xC0,0xC0,0
+             -x00,0x00,0x00,0xC0,0xC0,0x00,0x00,0x00,
+ 234                                                                            0x00,0x0F,0x7F,0x70,0x7E,0x0F,0x01,0x0F,0x7E,0x70,0x7F,0x0F,0x00,0x00,0x0
+             -0,0x00};
+ 235          code unsigned char x__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0xC0,0xC0,0x80,0x00,0x80,0xC0,0xC0,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 236                                                                            0x00,0x60,0x71,0x3F,0x0E,0x3F,0x71,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 237          code unsigned char y__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x30,0xF0,0xC0,0x00,0x00,0x00,0xC0,0xF0,0
+             -x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 238                                                                            0x00,0xC0,0xC7,0xFF,0x7C,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 239          code unsigned char z__WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0
+             -x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 240                                                                            0x00,0x60,0x78,0x7C,0x6E,0x67,0x63,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x0
+             -0,0x00};
+ 241          
+ 242          code unsigned char number_0_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0xE0,0xF0,0x38,0x18,0x18,0x38,0xF0,
+             -0xE0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 243                                                                                  0x1F,0x3F,0x70,0x60,0x60,0x70,0x3F,0x1F,0x00,0x00,0x00,0x00,0x00,0x00
+             -,0x00,0x00};
+ 244          code unsigned char number_1_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0xC0,0x60,0x30,0xF8,0xF8,0x00,
+             -0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 8   
+
+ 245                                                                                  0x00,0x00,0x00,0x00,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 246          code unsigned char number_2_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x60,0x70,0x38,0x18,0x18,0x18,0xF0,
+             -0xE0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 247                                                                                  0x60,0x70,0x78,0x6C,0x6E,0x67,0x63,0x60,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 248          code unsigned char number_3_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x20,0x30,0x18,0x98,0x98,0x98,0xF8,
+             -0x70,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 249                                                                                  0x18,0x38,0x70,0x61,0x61,0x73,0x3F,0x1E,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 250          code unsigned char number_4_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x00,0x00,0x80,0xC0,0x70,0xF8,0xF8,
+             -0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 251                                                                                  0x1C,0x1E,0x1B,0x19,0x18,0x7F,0x7F,0x18,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 252          code unsigned char number_5_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0xC0,0xF8,0xF8,0x98,0x98,0x98,0x18,
+             -0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 253                                                                                  0x1B,0x3B,0x71,0x61,0x73,0x3F,0x1E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 254          code unsigned char number_6_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0xC0,0xF0,0x38,0x98,0x98,0x98,0x38,
+             -0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 255                                                                                  0x0F,0x3F,0x73,0x61,0x61,0x63,0x3F,0x1E,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 256          code unsigned char number_7_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0x18,0x18,0x18,0x18,0xD8,0xF8,0x38,
+             -0x18,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 257                                                                                  0x00,0x00,0x78,0x7F,0x0F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 258          code unsigned char number_8_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0xE0,0xF0,0x18,0x18,0x18,0x18,0xF0,
+             -0xE0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 259                                                                                  0x1C,0x3F,0x63,0x63,0x63,0x63,0x3F,0x1C,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 260          code unsigned char number_9_WidthAdjusted_Arial_ASCII[34] = {0x00,0x09,0xE0,0xF0,0x18,0x18,0x18,0x38,0xF0,
+             -0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 261                                                                                  0x31,0x73,0x67,0x66,0x66,0x73,0x3F,0x0F,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00};
+ 262          code unsigned char zpt_WidthAdjusted_Arial_ASCII[34] = {0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 263                                                                             0x98,0x78,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x
+             -00,0x00};
+ 264          code unsigned char tck_WidthAdjusted_Arial_ASCII[34] = {0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+             -0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+ 265                                                                             0x60,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x
+             -00,0x00};
+ 266                                                                             
+ 267          
+ 268          unsigned long int getAddress_5x7_ASCII(unsigned int ASCIICODE){
+ 269   1        if(ASCIICODE >= 0x20 && ASCIICODE <= 0xFF){
+ 270   2          Address = (ASCIICODE - 32.0) * 8.0;
+ 271   2        } 
+ 272   1        return Address;
+ 273   1      }
+ 274          
+ 275          unsigned long int getAddress_7x8_ASCII(unsigned int ASCIICODE){
+ 276   1        if(ASCIICODE >= 0x20 && ASCIICODE <= 0xFF){
+ 277   2          Address = ((ASCIICODE - 32.0) * 8.0) + 768.0;
+ 278   2        } 
+ 279   1        return Address;
+ 280   1      }
+ 281          
+ 282          unsigned long int getAddress_8x16_ASCII(unsigned int ASCIICODE){
+ 283   1        if(ASCIICODE >= 0x20 && ASCIICODE <= 0xFF){
+ 284   2          Address = ((ASCIICODE - 32.0) * 16.0) + 1536.0;
+ 285   2        } 
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 9   
+
+ 286   1        return Address;
+ 287   1      }
+ 288          
+ 289          
+ 290          unsigned long int getAddress_WidthAdjusted_Arial_ASCII(unsigned int ASCIICODE){ 
+ 291   1        if(ASCIICODE >= 0x20 && ASCIICODE <= 0xFF)
+ 292   1          Address = ((ASCIICODE - 32.0)) * 34.0 + 3072.0; 
+ 293   1        return Address;
+ 294   1      }
+ 295          /*unsigned long int getAddress_WidthAdjusted_Latin(unsigned int UNICODE){ 
+ 296            if(UNICODE >= 0x0020 && UNICODE <= 0x007F)
+ 297              Address = ((UNICODE - 0x0020) * 34.0) + 22976.0;  
+ 298            else if(UNICODE >= 0x00A0 && UNICODE <= 0x017F)
+ 299              Address = ((UNICODE - 0x00A0 + 96.0) * 34.0) + 22976.0;
+ 300            else if(UNICODE >= 0x01A0 && UNICODE <= 0x01CF)
+ 301              Address = ((UNICODE - 0x01A0 + 320.0) * 34.0) + 22976.0;
+ 302            else if(UNICODE >= 0x01F0 && UNICODE <= 0x01FF)
+ 303              Address = ((UNICODE - 0x01F0 + 368.0) * 34.0) + 22976.0;
+ 304            else if(UNICODE >= 0x0210 && UNICODE <= 0x021F)
+ 305              Address = ((UNICODE - 0x0210 + 384.0) * 34.0) + 22976.0;
+ 306            else if(UNICODE >= 0x1EA0 && UNICODE <= 0x1EFF)
+ 307              Address = ((UNICODE - 0x1EA0 + 400.0) * 34.0) + 22976.0;
+ 308            return Address;
+ 309          }*/
+ 310          unsigned long int getAddress_8x16_Latin(unsigned int UNICODE){
+ 311   1        if(UNICODE >= 0x0020 && UNICODE <= 0x007F)
+ 312   1          Address = ((UNICODE - 32.0) * 16.0) + 6336.0;
+ 313   1        else if(UNICODE >= 0x00A0 && UNICODE <= 0x017F)
+ 314   1          Address = ((UNICODE - 160.0 + 96.0) * 16.0) + 6336.0;
+ 315   1        else if(UNICODE >= 0x01A0 && UNICODE <= 0x01CF)
+ 316   1          Address = ((UNICODE - 416.0 + 320.0) * 16.0) + 6336.0;
+ 317   1        else if(UNICODE >= 0x01F0 && UNICODE <= 0x01FF)
+ 318   1          Address = ((UNICODE - 496.0 + 368.0) * 16.0) + 6336.0;
+ 319   1        else if(UNICODE >= 0x0210 && UNICODE <= 0x021F)
+ 320   1          Address = ((UNICODE - 582.0 + 384.0) * 16.0) + 6336.0;
+ 321   1        else if(UNICODE >= 0x1EA0 && UNICODE <= 0x1EFF)
+ 322   1          Address = ((UNICODE - 7840.0 + 400.0) * 16.0) + 6336.0; 
+ 323   1        return Address;
+ 324   1      }
+ 325          
+ 326          /*unsigned long int getAddress_GB2312(unsigned int GBCODE){
+ 327            MSB = (GBCODE & 0xFF00)>>8;
+ 328            LSB = (GBCODE & 0x00FF);
+ 329            
+ 330            if(MSB >= 0xA1 && MSB <= 0xA9 && LSB >= 0xA1)
+ 331              Address = (((MSB - 161.0)) * 94.0 + (LSB-161.0)) * 32.0 + 69760.0;
+ 332            else if(MSB>=0xB0 && MSB <= 0xF7 && LSB >= 0xA1)
+ 333              Address = (((MSB - 176.0) * 94.0) + (LSB-161.0)+846.0) * 32.0 + 69760.0;  
+ 334            return Address;
+ 335          }*/
+ 336          
+ 337          /*unsigned long int getAddress_5x10_LCM_1(unsigned int UNICODE){
+ 338            if(UNICODE >= 0x0000 && UNICODE <= 0x00FF)
+ 339              Address = (UNICODE * 10.0) + 961328.0;  
+ 340            return Address;
+ 341          }*/
+ 342          /*unsigned long int getAddress_5x10_LCM_2(unsigned int UNICODE){
+ 343            if(UNICODE >= 0x0000 && UNICODE <= 0x00FF)
+ 344              Address = (UNICODE * 10.0) + 961328.0 + 2560.0; 
+ 345            return Address;
+ 346          }*/
+ 347          /*unsigned long int getAddress_5x10_LCM_3(unsigned int UNICODE){
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 10  
+
+ 348            if(UNICODE >= 0x0000 && UNICODE <= 0x00FF)
+ 349              Address = (UNICODE * 10.0) + 961328.0 + 2560.0 * 2.0; 
+ 350            return Address;
+ 351          }*/
+ 352          /*unsigned long int getAddress_5x10_LCM_8(unsigned int UNICODE){
+ 353            if(UNICODE >= 0x0000 && UNICODE <= 0x00FF)
+ 354              Address = (UNICODE * 10.0) + 961328.0 + 2560.0 * 3.0; 
+ 355            return Address;
+ 356          }*/
+ 357          /*unsigned long int getAddress_5x10_LCM_11(unsigned int UNICODE){
+ 358            if(UNICODE >= 0x0000 && UNICODE <= 0x00FF)
+ 359              Address = (UNICODE * 10.0) + 961328.0 + 2560.0 * 4.0; 
+ 360            return Address;
+ 361          }*/
+ 362          /*unsigned long int getAddress_5x10_LCM_12(unsigned int UNICODE){
+ 363            if(UNICODE >= 0x0000 && UNICODE <= 0x00FF)
+ 364              Address = (UNICODE * 10.0) + 961328.0 + 2560.0 * 5.0; 
+ 365            return Address;
+ 366          }*/
+ 367          /*unsigned long int getAddress_5x10_LCM_13(unsigned int UNICODE){
+ 368            if(UNICODE >= 0x0000 && UNICODE <= 0x00FF)
+ 369              Address = (UNICODE * 10.0) + 961328.0 + 2560.0 * 6.0; 
+ 370            return Address;
+ 371          }*/
+ 372          unsigned test_bit(unsigned aValue, unsigned aNumber){
+ 373   1          return aValue & (1 << aNumber);
+ 374   1      }
+ 375          void sendMF_byte_to_Display(unsigned char data_byte){ 
+ 376   1        SFRPAGE = 0x0F;
+ 377   1        MF_SI = 0;
+ 378   1        MF_SCLK = 0;  
+ 379   1        for(t = 0; t < 8; t++){ 
+ 380   2          MF_SCLK = 0;
+ 381   2          MF_SI = 0;
+ 382   2          if(test_bit(data_byte, (7-t)) > 0)
+ 383   2            MF_SI = 1;
+ 384   2          else
+ 385   2            MF_SI = 0;    
+ 386   2          MF_SCLK = 1;    
+ 387   2        }
+ 388   1        MF_SCLK = 0;
+ 389   1        MF_SI = 0;
+ 390   1      }
+ 391          
+ 392          void send24bitAddressToDisplay(){
+ 393   1      
+ 394   1        sendMF_byte_to_Display(address_BYTE1_MSB);
+ 395   1        sendMF_byte_to_Display(address_BYTE2);
+ 396   1        sendMF_byte_to_Display(address_BYTE3_LSB);
+ 397   1      }
+ 398          
+ 399          void clearArray(unsigned char* arr){    
+ 400   1        while(*arr != 0)
+ 401   1          *arr++ = 0;
+ 402   1      }
+ 403          unsigned char readByteFromDisplay(){
+ 404   1        ReadByte = 0x00;
+ 405   1        MF_SCLK = 0;  
+ 406   1        for(r = 7; r >= 0; r--){          
+ 407   2          MF_SCLK = 1;
+ 408   2          delay100mkS();    
+ 409   2          if(MF_SO == 1)
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 11  
+
+ 410   2            ReadByte |= 1<<r;
+ 411   2          MF_SCLK = 0;
+ 412   2          delay100mkS();
+ 413   2        } 
+ 414   1        return ReadByte;
+ 415   1      }
+ 416          
+ 417          
+ 418          /*
+ 419          void read_5x7_ASCII_CharFromDisplay(unsigned char ch){  
+ 420            SFRPAGE = 0x0F;
+ 421            //MF_SCLK = 0;  
+ 422            for(f = 0;f < 8;f++){
+ 423              ReadByte = 0x00;
+ 424              MF_SCLK = 0;
+ 425              for(r = 7; r >= 0; r--){  
+ 426                
+ 427                MF_SCLK = 0;
+ 428                //delay100mkS();
+ 429                
+ 430                if(MF_SO == 1)
+ 431                  ReadByte |= 1<<r;
+ 432                else          
+ 433                  ReadByte |= 0<<r;     
+ 434                
+ 435                MF_SCLK = 1;
+ 436                //delay100mkS();      
+ 437              }
+ 438              //font5x7[f] = ReadByte;  
+ 439              //M_5x7_ASCII[f] = ReadByte;
+ 440              switch(ch){
+ 441                case 'A': A_5x7_ASCII[f] = ReadByte; break;
+ 442                case 'B': B_5x7_ASCII[f] = ReadByte; break;
+ 443                case 'C': C_5x7_ASCII[f] = ReadByte; break;
+ 444                case 'D': D_5x7_ASCII[f] = ReadByte; break;
+ 445                case 'E': E_5x7_ASCII[f] = ReadByte; break;
+ 446                case 'F': F_5x7_ASCII[f] = ReadByte; break;
+ 447                case 'G': G_5x7_ASCII[f] = ReadByte; break;
+ 448                case 'H': H_5x7_ASCII[f] = ReadByte; break;
+ 449                case 'I': I_5x7_ASCII[f] = ReadByte; break;
+ 450                case 'J': J_5x7_ASCII[f] = ReadByte; break;
+ 451                case 'K': K_5x7_ASCII[f] = ReadByte; break;
+ 452                case 'L': L_5x7_ASCII[f] = ReadByte; break;
+ 453                case 'M': M_5x7_ASCII[f] = ReadByte; break;
+ 454                case 'N': N_5x7_ASCII[f] = ReadByte; break;
+ 455                case 'O': O_5x7_ASCII[f] = ReadByte; break;
+ 456                case 'P': P_5x7_ASCII[f] = ReadByte; break;
+ 457                case 'Q': Q_5x7_ASCII[f] = ReadByte; break;
+ 458                case 'R': R_5x7_ASCII[f] = ReadByte; break;
+ 459                case 'S': S_5x7_ASCII[f] = ReadByte; break;
+ 460                case 'T': T_5x7_ASCII[f] = ReadByte; break;
+ 461                case 'U': U_5x7_ASCII[f] = ReadByte; break;
+ 462                case 'V': V_5x7_ASCII[f] = ReadByte; break;
+ 463                case 'W': W_5x7_ASCII[f] = ReadByte; break;
+ 464                case 'X': X_5x7_ASCII[f] = ReadByte; break;
+ 465                case 'Y': Y_5x7_ASCII[f] = ReadByte; break;
+ 466                case 'Z': Z_5x7_ASCII[f] = ReadByte; break;
+ 467                case '<': left_5x7_ASCII[f] = ReadByte; break;
+ 468                case '>': right_5x7_ASCII[f] = ReadByte; break;
+ 469                case '\"': quote_5x7_ASCII[f] = ReadByte; break;
+ 470                case ',': zpt_5x7_ASCII[f] = ReadByte; break;
+ 471              }   
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 12  
+
+ 472            }   
+ 473          }
+ 474          */
+ 475          void read_7x8_ASCII_CharFromDisplay(){  
+ 476   1        SFRPAGE = 0x0F;
+ 477   1        //MF_SCLK = 0;  
+ 478   1        for(f = 0;f < 8;f++){
+ 479   2          ReadByte = 0x00;
+ 480   2          MF_SCLK = 0;
+ 481   2          for(r = 7; r >= 0; r--){  
+ 482   3            
+ 483   3            MF_SCLK = 0;
+ 484   3            //delay100mkS();
+ 485   3            
+ 486   3            if(MF_SO == 1)
+ 487   3              ReadByte |= 1<<r;
+ 488   3            else          
+ 489   3              ReadByte |= 0<<r;     
+ 490   3            
+ 491   3            MF_SCLK = 1;
+ 492   3            //delay100mkS();      
+ 493   3          }
+ 494   2          font7x8[f] = ReadByte;  
+ 495   2        }   
+ 496   1      }
+ 497          /*
+ 498          void read_8x16_ASCII_CharFromDisplay(unsigned char ch){ 
+ 499            SFRPAGE = 0x0F;
+ 500            //MF_SCLK = 0;  
+ 501            for(f = 0;f < 16;f++){
+ 502              ReadByte = 0x00;
+ 503              MF_SCLK = 0;
+ 504              delay10mkS();
+ 505              for(r = 7; r >= 0; r--){  
+ 506                
+ 507                MF_SCLK = 0;
+ 508                //delay100mkS();
+ 509                
+ 510                if(MF_SO == 1)
+ 511                  ReadByte |= 1<<r;
+ 512                else          
+ 513                  ReadByte |= 0<<r;     
+ 514                
+ 515                MF_SCLK = 1;
+ 516                delay10mkS();
+ 517                //delay100mkS();      
+ 518              }
+ 519              //font8x16[f] = ReadByte; 
+ 520              switch(ch){
+ 521                case 'A': A_8x16_ASCII[f] = ReadByte; break;
+ 522                case 'B': B_8x16_ASCII[f] = ReadByte; break;
+ 523                case 'C': C_8x16_ASCII[f] = ReadByte; break;
+ 524                case 'D': D_8x16_ASCII[f] = ReadByte; break;
+ 525                case 'E': E_8x16_ASCII[f] = ReadByte; break;
+ 526                case 'F': F_8x16_ASCII[f] = ReadByte; break;
+ 527                case 'G': G_8x16_ASCII[f] = ReadByte; break;
+ 528                case 'H': H_8x16_ASCII[f] = ReadByte; break;
+ 529                case 'I': I_8x16_ASCII[f] = ReadByte; break;
+ 530                case 'J': J_8x16_ASCII[f] = ReadByte; break;
+ 531                case 'K': K_8x16_ASCII[f] = ReadByte; break;
+ 532                case 'L': L_8x16_ASCII[f] = ReadByte; break;
+ 533                case 'M': M_8x16_ASCII[f] = ReadByte; break;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 13  
+
+ 534                case 'N': N_8x16_ASCII[f] = ReadByte; break;
+ 535                case 'O': O_8x16_ASCII[f] = ReadByte; break;
+ 536                case 'P': P_8x16_ASCII[f] = ReadByte; break;
+ 537                case 'Q': Q_8x16_ASCII[f] = ReadByte; break;
+ 538                case 'R': R_8x16_ASCII[f] = ReadByte; break;
+ 539                case 'S': S_8x16_ASCII[f] = ReadByte; break;
+ 540                case 'T': T_8x16_ASCII[f] = ReadByte; break;
+ 541                case 'U': U_8x16_ASCII[f] = ReadByte; break;
+ 542                case 'V': V_8x16_ASCII[f] = ReadByte; break;
+ 543                case 'W': W_8x16_ASCII[f] = ReadByte; break;
+ 544                case 'X': X_8x16_ASCII[f] = ReadByte; break;
+ 545                case 'Y': Y_8x16_ASCII[f] = ReadByte; break;
+ 546                case 'Z': Z_8x16_ASCII[f] = ReadByte; break;
+ 547                case 'a': a__8x16_ASCII[f] = ReadByte; break;
+ 548                case 'b': b__8x16_ASCII[f] = ReadByte; break;
+ 549                case 'c': c__8x16_ASCII[f] = ReadByte; break;
+ 550                case 'd': d__8x16_ASCII[f] = ReadByte; break;
+ 551                case 'e': e__8x16_ASCII[f] = ReadByte; break;
+ 552                case 'f': f__8x16_ASCII[f] = ReadByte; break;
+ 553                case 'g': g__8x16_ASCII[f] = ReadByte; break;
+ 554                case 'h': h__8x16_ASCII[f] = ReadByte; break;
+ 555                case 'i': i__8x16_ASCII[f] = ReadByte; break;
+ 556                case 'j': j__8x16_ASCII[f] = ReadByte; break;
+ 557                case 'k': k__8x16_ASCII[f] = ReadByte; break;
+ 558                case 'l': l__8x16_ASCII[f] = ReadByte; break;
+ 559                case 'm': m__8x16_ASCII[f] = ReadByte; break;
+ 560                case 'n': n__8x16_ASCII[f] = ReadByte; break;
+ 561                case 'o': o__8x16_ASCII[f] = ReadByte; break;
+ 562                case 'p': p__8x16_ASCII[f] = ReadByte; break;
+ 563                case 'q': q__8x16_ASCII[f] = ReadByte; break;
+ 564                case 'r': r__8x16_ASCII[f] = ReadByte; break;
+ 565                case 's': s__8x16_ASCII[f] = ReadByte; break;
+ 566                case 't': t__8x16_ASCII[f] = ReadByte; break;
+ 567                case 'u': u__8x16_ASCII[f] = ReadByte; break;
+ 568                case 'v': v__8x16_ASCII[f] = ReadByte; break;
+ 569                case 'w': w__8x16_ASCII[f] = ReadByte; break;
+ 570                case 'x': x__8x16_ASCII[f] = ReadByte; break;
+ 571                case 'y': y__8x16_ASCII[f] = ReadByte; break;
+ 572                case 'z': z__8x16_ASCII[f] = ReadByte; break;
+ 573                case '0': number_0_8x16_ASCII[f] = ReadByte; break;
+ 574                case '1': number_1_8x16_ASCII[f] = ReadByte; break;
+ 575                case '2': number_2_8x16_ASCII[f] = ReadByte; break;
+ 576                case '3': number_3_8x16_ASCII[f] = ReadByte; break;
+ 577                case '4': number_4_8x16_ASCII[f] = ReadByte; break;
+ 578                case '5': number_5_8x16_ASCII[f] = ReadByte; break;
+ 579                case '6': number_6_8x16_ASCII[f] = ReadByte; break;
+ 580                case '7': number_7_8x16_ASCII[f] = ReadByte; break;     
+ 581                case '8': number_8_8x16_ASCII[f] = ReadByte; break;
+ 582                case '9': number_9_8x16_ASCII[f] = ReadByte; break;
+ 583                case ',': zpt_8x16_ASCII[f] = ReadByte; break;
+ 584                case '.': tck_8x16_ASCII[f] = ReadByte; break;
+ 585                case ':': double_tck_8x16_ASCII[f] = ReadByte; break;
+ 586                case '-': minus_8x16_ASCII[f] = ReadByte; break;
+ 587                case '=': ravno_8x16_ASCII[f] = ReadByte; break;
+ 588                case '+': plus_8x16_ASCII[f] = ReadByte; break;
+ 589                case '(': skobka1_8x16_ASCII[f] = ReadByte; break;
+ 590                case ')': skobka2_8x16_ASCII[f] = ReadByte; break;
+ 591                case '/': kosaya_right_8x16_ASCII[f] = ReadByte; break;
+ 592                case '%': procent_8x16_ASCII[f] = ReadByte; break;
+ 593              } 
+ 594            }   
+ 595          }
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 14  
+
+ 596          */
+ 597          /*
+ 598          void read_16x16_Font_CharFromDisplay(unsigned char ch){ 
+ 599            SFRPAGE = 0x0F;
+ 600            //MF_SCLK = 0;  
+ 601            for(f = 0;f < 34;f++){
+ 602              ReadByte = 0x00;
+ 603              MF_SCLK = 0;
+ 604              for(r = 7; r >= 0; r--){  
+ 605                
+ 606                MF_SCLK = 0;
+ 607                //delay100mkS();
+ 608                delay10mkS();
+ 609                if(MF_SO == 1)
+ 610                  ReadByte |= 1<<r;
+ 611                else          
+ 612                  ReadByte |= 0<<r;     
+ 613                
+ 614                MF_SCLK = 1;
+ 615                delay10mkS();
+ 616                //delay100mkS();      
+ 617              }
+ 618              //font16x16[f] = ReadByte;
+ 619              switch(ch){
+ 620                case 'A': A_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 621                case 'B': B_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 622                case 'C': C_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 623                case 'D': D_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 624                case 'E': E_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 625                case 'F': F_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 626                case 'G': G_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 627                case 'H': H_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 628                case 'I': I_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 629                case 'J': J_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 630                case 'K': K_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 631                case 'L': L_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 632                case 'M': M_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 633                case 'N': N_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 634                case 'O': O_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 635                case 'P': P_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 636                case 'Q': Q_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 637                case 'R': R_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 638                case 'S': S_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 639                case 'T': T_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 640                case 'U': U_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 641                case 'V': V_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 642                case 'W': W_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 643                case 'X': X_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 644                case 'Y': Y_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 645                case 'Z': Z_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 646                case 'a': a__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 647                case 'b': b__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 648                case 'c': c__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 649                case 'd': d__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 650                case 'e': e__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 651                case 'f': f__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 652                case 'g': g__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 653                case 'h': h__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 654                case 'i': i__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 655                case 'j': j__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 656                case 'k': k__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 657                case 'l': l__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 15  
+
+ 658                case 'm': m__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 659                case 'n': n__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 660                case 'o': o__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 661                case 'p': p__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 662                case 'q': q__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 663                case 'r': r__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 664                case 's': s__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 665                case 't': t__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 666                case 'u': u__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 667                case 'v': v__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 668                case 'w': w__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 669                case 'x': x__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 670                case 'y': y__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 671                case 'z': z__WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 672                case '0': number_0_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 673                case '1': number_1_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 674                case '2': number_2_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 675                case '3': number_3_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 676                case '4': number_4_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 677                case '5': number_5_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 678                case '6': number_6_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 679                case '7': number_7_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;      
+ 680                case '8': number_8_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 681                case '9': number_9_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 682                case ',': zpt_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;
+ 683                case '.': tck_WidthAdjusted_Arial_ASCII[f] = ReadByte; break;     
+ 684              } 
+ 685            }   
+ 686          }
+ 687          */
+ 688          
+ 689          /*void read_GB2312_CharFromDisplay(){ 
+ 690            SFRPAGE = 0x0F;
+ 691            //MF_SCLK = 0;  
+ 692            for(f = 0;f < 32;f++){
+ 693              ReadByte = 0x00;
+ 694              MF_SCLK = 0;
+ 695              for(r = 7; r >= 0; r--){  
+ 696                
+ 697                MF_SCLK = 0;
+ 698                delay100mkS();
+ 699                
+ 700                if(MF_SO == 1)
+ 701                  ReadByte |= 1<<r;
+ 702                else          
+ 703                  ReadByte |= 0<<r;     
+ 704                
+ 705                MF_SCLK = 1;
+ 706                delay100mkS();      
+ 707              }
+ 708              fontGB2312[f] = ReadByte; 
+ 709            }   
+ 710          }*/
+ 711          
+ 712          /*void drawChar5x7ASCII_toDisplay(unsigned char col, unsigned char row){
+ 713            Set_Column_Address(col, col+1);
+ 714            Set_Row_Address(row,row+7);
+ 715            writeRAMCommand();
+ 716            for(dr = 0;dr < 8;dr++){
+ 717                draw_byte = 0x00;
+ 718                if(test_bit(font5x7[0], dr) > 0)
+ 719                  draw_byte+=0xF0;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 16  
+
+ 720                if(test_bit(font5x7[1], dr) > 0)
+ 721                  draw_byte+=0x0F;
+ 722                oled_Data(draw_byte);
+ 723                
+ 724                draw_byte = 0x00;
+ 725                if(test_bit(font5x7[2], dr) > 0)
+ 726                  draw_byte+=0xF0;
+ 727                if(test_bit(font5x7[3], dr) > 0)
+ 728                  draw_byte+=0x0F;
+ 729                oled_Data(draw_byte);
+ 730            }
+ 731            for(dr = 0;dr < 8;dr++){
+ 732                draw_byte = 0x00;
+ 733                if(test_bit(font5x7[4], dr) > 0)
+ 734                  draw_byte+=0xF0;
+ 735                if(test_bit(font5x7[5], dr) > 0)
+ 736                  draw_byte+=0x0F;
+ 737                oled_Data(draw_byte);
+ 738                
+ 739                draw_byte = 0x00;
+ 740                if(test_bit(font5x7[6], dr) > 0)
+ 741                  draw_byte+=0xF0;
+ 742                if(test_bit(font5x7[7], dr) > 0)
+ 743                  draw_byte+=0x0F;
+ 744                oled_Data(draw_byte);
+ 745            } 
+ 746          }*/
+ 747          void drawChar5x7ASCII_toDisplay_Array(const unsigned char* arr5x7, unsigned char col, unsigned char row, u
+             -nsigned char brightness){
+ 748   1        Set_Column_Address(col, col+1);
+ 749   1        Set_Row_Address(row,row+7);
+ 750   1        writeRAMCommand();
+ 751   1        for(dr = 0;dr < 8;dr++){
+ 752   2            draw_byte = 0x00;
+ 753   2            if(test_bit(arr5x7[0], dr) > 0)
+ 754   2              draw_byte+=(brightness << 4);
+ 755   2            if(test_bit(arr5x7[1], dr) > 0)
+ 756   2              draw_byte+=brightness;
+ 757   2            oled_Data(draw_byte);
+ 758   2            
+ 759   2            draw_byte = 0x00;
+ 760   2            if(test_bit(arr5x7[2], dr) > 0)
+ 761   2              draw_byte+=(brightness << 4);
+ 762   2            if(test_bit(arr5x7[3], dr) > 0)
+ 763   2              draw_byte+=brightness;
+ 764   2            oled_Data(draw_byte);
+ 765   2        }
+ 766   1        for(dr = 0;dr < 8;dr++){
+ 767   2            draw_byte = 0x00;
+ 768   2            if(test_bit(arr5x7[4], dr) > 0)
+ 769   2              draw_byte+=(brightness << 4);
+ 770   2            if(test_bit(arr5x7[5], dr) > 0)
+ 771   2              draw_byte+=brightness;
+ 772   2            oled_Data(draw_byte);
+ 773   2            
+ 774   2            draw_byte = 0x00;
+ 775   2            if(test_bit(arr5x7[6], dr) > 0)
+ 776   2              draw_byte+=(brightness << 4);
+ 777   2            if(test_bit(arr5x7[7], dr) > 0)
+ 778   2              draw_byte+=brightness;
+ 779   2            oled_Data(draw_byte);
+ 780   2        } 
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 17  
+
+ 781   1      }
+ 782          void drawChar7x8ASCII_toDisplay(unsigned char col, unsigned char row){
+ 783   1        Set_Column_Address(col, col+1);
+ 784   1        Set_Row_Address(row,row+7);
+ 785   1        writeRAMCommand();
+ 786   1        for(dr = 0;dr < 8;dr++){
+ 787   2            draw_byte = 0x00;
+ 788   2            if(test_bit(font7x8[0], dr) > 0)
+ 789   2              draw_byte+=0xF0;
+ 790   2            if(test_bit(font7x8[1], dr) > 0)
+ 791   2              draw_byte+=0x0F;
+ 792   2            oled_Data(draw_byte);
+ 793   2            
+ 794   2            draw_byte = 0x00;
+ 795   2            if(test_bit(font7x8[2], dr) > 0)
+ 796   2              draw_byte+=0xF0;
+ 797   2            if(test_bit(font7x8[3], dr) > 0)
+ 798   2              draw_byte+=0x0F;
+ 799   2            oled_Data(draw_byte);
+ 800   2        }
+ 801   1        for(dr = 0;dr < 8;dr++){
+ 802   2            draw_byte = 0x00;
+ 803   2            if(test_bit(font7x8[4], dr) > 0)
+ 804   2              draw_byte+=0xF0;
+ 805   2            if(test_bit(font7x8[5], dr) > 0)
+ 806   2              draw_byte+=0x0F;
+ 807   2            oled_Data(draw_byte);
+ 808   2            
+ 809   2            draw_byte = 0x00;
+ 810   2            if(test_bit(font7x8[6], dr) > 0)
+ 811   2              draw_byte+=0xF0;
+ 812   2            if(test_bit(font7x8[7], dr) > 0)
+ 813   2              draw_byte+=0x0F;
+ 814   2            oled_Data(draw_byte);
+ 815   2        } 
+ 816   1      }
+ 817          
+ 818          void drawChar8x16_toDisplay(unsigned char col, unsigned char row){
+ 819   1        Set_Column_Address(col, col+1);
+ 820   1        Set_Row_Address(row,row+15);
+ 821   1        writeRAMCommand();  
+ 822   1        for(dr = 0; dr < 8;dr++){
+ 823   2            draw_byte = 0x00;
+ 824   2            if(test_bit(font8x16[0], dr) > 0)
+ 825   2              draw_byte+=0xF0;
+ 826   2            if(test_bit(font8x16[1], dr) > 0)
+ 827   2              draw_byte+=0x0F;
+ 828   2            oled_Data(draw_byte);
+ 829   2            
+ 830   2            draw_byte = 0x00;
+ 831   2            if(test_bit(font8x16[2], dr) > 0)
+ 832   2              draw_byte+=0xF0;
+ 833   2            if(test_bit(font8x16[3], dr) > 0)
+ 834   2              draw_byte+=0x0F;
+ 835   2            oled_Data(draw_byte);   
+ 836   2        }
+ 837   1        for(dr = 0; dr < 8;dr++){
+ 838   2            draw_byte = 0x00;
+ 839   2            if(test_bit(font8x16[8], dr) > 0)
+ 840   2              draw_byte+=0xF0;
+ 841   2            if(test_bit(font8x16[9], dr) > 0)
+ 842   2              draw_byte+=0x0F;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 18  
+
+ 843   2            oled_Data(draw_byte);
+ 844   2            
+ 845   2            draw_byte = 0x00;
+ 846   2            if(test_bit(font8x16[10], dr) > 0)
+ 847   2              draw_byte+=0xF0;
+ 848   2            if(test_bit(font8x16[11], dr) > 0)
+ 849   2              draw_byte+=0x0F;
+ 850   2            oled_Data(draw_byte);   
+ 851   2        }
+ 852   1        for(dr = 0; dr < 8;dr++){
+ 853   2            draw_byte = 0x00;
+ 854   2            if(test_bit(font8x16[4], dr) > 0)
+ 855   2              draw_byte+=0xF0;
+ 856   2            if(test_bit(font8x16[5], dr) > 0)
+ 857   2              draw_byte+=0x0F;
+ 858   2            oled_Data(draw_byte);
+ 859   2            
+ 860   2            draw_byte = 0x00;
+ 861   2            if(test_bit(font8x16[6], dr) > 0)
+ 862   2              draw_byte+=0xF0;
+ 863   2            if(test_bit(font8x16[7], dr) > 0)
+ 864   2              draw_byte+=0x0F;
+ 865   2            oled_Data(draw_byte);   
+ 866   2        }
+ 867   1        for(dr = 0; dr < 8;dr++){
+ 868   2            draw_byte = 0x00;
+ 869   2            if(test_bit(font8x16[12], dr) > 0)
+ 870   2              draw_byte+=0xF0;
+ 871   2            if(test_bit(font8x16[13], dr) > 0)
+ 872   2              draw_byte+=0x0F;
+ 873   2            oled_Data(draw_byte);
+ 874   2            
+ 875   2            draw_byte = 0x00;
+ 876   2            if(test_bit(font8x16[14], dr) > 0)
+ 877   2              draw_byte+=0xF0;
+ 878   2            if(test_bit(font8x16[15], dr) > 0)
+ 879   2              draw_byte+=0x0F;
+ 880   2            oled_Data(draw_byte);   
+ 881   2        }
+ 882   1      }
+ 883          
+ 884          void drawChar8x16_toDisplay_Array(const unsigned char* arr8x16, unsigned char col, unsigned char row, unsi
+             -gned char brightness){
+ 885   1        Set_Column_Address(col, col+1);
+ 886   1        Set_Row_Address(row,row+15);
+ 887   1        writeRAMCommand();  
+ 888   1        for(dr = 0; dr < 8;dr++){
+ 889   2            draw_byte = 0x00;
+ 890   2            if(test_bit(arr8x16[0], dr) > 0)
+ 891   2              draw_byte+=(brightness << 4);
+ 892   2            if(test_bit(arr8x16[1], dr) > 0)
+ 893   2              draw_byte+=brightness;
+ 894   2            oled_Data(draw_byte);
+ 895   2            
+ 896   2            draw_byte = 0x00;
+ 897   2            if(test_bit(arr8x16[2], dr) > 0)
+ 898   2              draw_byte+=(brightness << 4);
+ 899   2            if(test_bit(arr8x16[3], dr) > 0)
+ 900   2              draw_byte+=brightness;
+ 901   2            oled_Data(draw_byte);   
+ 902   2        }
+ 903   1        for(dr = 0; dr < 8;dr++){
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 19  
+
+ 904   2            draw_byte = 0x00;
+ 905   2            if(test_bit(arr8x16[8], dr) > 0)
+ 906   2              draw_byte+=(brightness << 4);
+ 907   2            if(test_bit(arr8x16[9], dr) > 0)
+ 908   2              draw_byte+=brightness;
+ 909   2            oled_Data(draw_byte);
+ 910   2            
+ 911   2            draw_byte = 0x00;
+ 912   2            if(test_bit(arr8x16[10], dr) > 0)
+ 913   2              draw_byte+=(brightness << 4);
+ 914   2            if(test_bit(arr8x16[11], dr) > 0)
+ 915   2              draw_byte+=brightness;
+ 916   2            oled_Data(draw_byte);   
+ 917   2        }
+ 918   1        for(dr = 0; dr < 8;dr++){
+ 919   2            draw_byte = 0x00;
+ 920   2            if(test_bit(arr8x16[4], dr) > 0)
+ 921   2              draw_byte+=(brightness << 4);
+ 922   2            if(test_bit(arr8x16[5], dr) > 0)
+ 923   2              draw_byte+=brightness;
+ 924   2            oled_Data(draw_byte);
+ 925   2            
+ 926   2            draw_byte = 0x00;
+ 927   2            if(test_bit(arr8x16[6], dr) > 0)
+ 928   2              draw_byte+=(brightness << 4);
+ 929   2            if(test_bit(arr8x16[7], dr) > 0)
+ 930   2              draw_byte+=brightness;
+ 931   2            oled_Data(draw_byte);   
+ 932   2        }
+ 933   1        for(dr = 0; dr < 8;dr++){
+ 934   2            draw_byte = 0x00;
+ 935   2            if(test_bit(arr8x16[12], dr) > 0)
+ 936   2              draw_byte+=(brightness << 4);
+ 937   2            if(test_bit(arr8x16[13], dr) > 0)
+ 938   2              draw_byte+=brightness;
+ 939   2            oled_Data(draw_byte);
+ 940   2            
+ 941   2            draw_byte = 0x00;
+ 942   2            if(test_bit(arr8x16[14], dr) > 0)
+ 943   2              draw_byte+=(brightness << 4);
+ 944   2            if(test_bit(arr8x16[15], dr) > 0)
+ 945   2              draw_byte+=brightness;
+ 946   2            oled_Data(draw_byte); 
+ 947   2          } 
+ 948   1      }
+ 949          
+ 950          void drawChar16x16_toDisplay(unsigned char col, unsigned char row){
+ 951   1        Set_Column_Address(col, col+3);
+ 952   1        Set_Row_Address(row,row+15);
+ 953   1        writeRAMCommand();  
+ 954   1        for(dr = 0; dr < 8;dr++){
+ 955   2            draw_byte = 0x00;
+ 956   2            if(test_bit(font16x16[2], dr) > 0)
+ 957   2              draw_byte+=0xF0;
+ 958   2            if(test_bit(font16x16[3], dr) > 0)
+ 959   2              draw_byte+=0x0F;
+ 960   2            oled_Data(draw_byte);
+ 961   2            
+ 962   2            draw_byte = 0x00;
+ 963   2            if(test_bit(font16x16[4], dr) > 0)
+ 964   2              draw_byte+=0xF0;
+ 965   2            if(test_bit(font16x16[5], dr) > 0)
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 20  
+
+ 966   2              draw_byte+=0x0F;
+ 967   2            oled_Data(draw_byte);   
+ 968   2        }
+ 969   1        for(dr = 0; dr < 8;dr++){
+ 970   2            draw_byte = 0x00;
+ 971   2            if(test_bit(font16x16[18], dr) > 0)
+ 972   2              draw_byte+=0xF0;
+ 973   2            if(test_bit(font16x16[19], dr) > 0)
+ 974   2              draw_byte+=0x0F;
+ 975   2            oled_Data(draw_byte);
+ 976   2            
+ 977   2            draw_byte = 0x00;
+ 978   2            if(test_bit(font16x16[20], dr) > 0)
+ 979   2              draw_byte+=0xF0;
+ 980   2            if(test_bit(font16x16[21], dr) > 0)
+ 981   2              draw_byte+=0x0F;
+ 982   2            oled_Data(draw_byte);   
+ 983   2        }
+ 984   1        for(dr = 0; dr < 8;dr++){
+ 985   2            draw_byte = 0x00;
+ 986   2            if(test_bit(font16x16[6], dr) > 0)
+ 987   2              draw_byte+=0xF0;
+ 988   2            if(test_bit(font16x16[7], dr) > 0)
+ 989   2              draw_byte+=0x0F;
+ 990   2            oled_Data(draw_byte);
+ 991   2            
+ 992   2            draw_byte = 0x00;
+ 993   2            if(test_bit(font16x16[8], dr) > 0)
+ 994   2              draw_byte+=0xF0;
+ 995   2            if(test_bit(font16x16[9], dr) > 0)
+ 996   2              draw_byte+=0x0F;
+ 997   2            oled_Data(draw_byte);   
+ 998   2        }
+ 999   1        for(dr = 0; dr < 8;dr++){
+1000   2            draw_byte = 0x00;
+1001   2            if(test_bit(font16x16[22], dr) > 0)
+1002   2              draw_byte+=0xF0;
+1003   2            if(test_bit(font16x16[23], dr) > 0)
+1004   2              draw_byte+=0x0F;
+1005   2            oled_Data(draw_byte);
+1006   2            
+1007   2            draw_byte = 0x00;
+1008   2            if(test_bit(font16x16[24], dr) > 0)
+1009   2              draw_byte+=0xF0;
+1010   2            if(test_bit(font16x16[25], dr) > 0)
+1011   2              draw_byte+=0x0F;
+1012   2            oled_Data(draw_byte);   
+1013   2        }
+1014   1        for(dr = 0; dr < 8;dr++){
+1015   2            draw_byte = 0x00;
+1016   2            if(test_bit(font16x16[10], dr) > 0)
+1017   2              draw_byte+=0xF0;
+1018   2            if(test_bit(font16x16[11], dr) > 0)
+1019   2              draw_byte+=0x0F;
+1020   2            oled_Data(draw_byte);
+1021   2            
+1022   2            draw_byte = 0x00;
+1023   2            if(test_bit(font16x16[12], dr) > 0)
+1024   2              draw_byte+=0xF0;
+1025   2            if(test_bit(font16x16[13], dr) > 0)
+1026   2              draw_byte+=0x0F;
+1027   2            oled_Data(draw_byte);   
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 21  
+
+1028   2        }
+1029   1        for(dr = 0; dr < 8;dr++){
+1030   2            draw_byte = 0x00;
+1031   2            if(test_bit(font16x16[26], dr) > 0)
+1032   2              draw_byte+=0xF0;
+1033   2            if(test_bit(font16x16[27], dr) > 0)
+1034   2              draw_byte+=0x0F;
+1035   2            oled_Data(draw_byte);
+1036   2            
+1037   2            draw_byte = 0x00;
+1038   2            if(test_bit(font16x16[28], dr) > 0)
+1039   2              draw_byte+=0xF0;
+1040   2            if(test_bit(font16x16[29], dr) > 0)
+1041   2              draw_byte+=0x0F;
+1042   2            oled_Data(draw_byte);   
+1043   2        }
+1044   1        for(dr = 0; dr < 8;dr++){
+1045   2            draw_byte = 0x00;
+1046   2            if(test_bit(font16x16[14], dr) > 0)
+1047   2              draw_byte+=0xF0;
+1048   2            if(test_bit(font16x16[15], dr) > 0)
+1049   2              draw_byte+=0x0F;
+1050   2            oled_Data(draw_byte);
+1051   2            
+1052   2            draw_byte = 0x00;
+1053   2            if(test_bit(font16x16[16], dr) > 0)
+1054   2              draw_byte+=0xF0;
+1055   2            if(test_bit(font16x16[17], dr) > 0)
+1056   2              draw_byte+=0x0F;
+1057   2            oled_Data(draw_byte);   
+1058   2        }
+1059   1        for(dr = 0; dr < 8;dr++){
+1060   2            draw_byte = 0x00;
+1061   2            if(test_bit(font16x16[30], dr) > 0)
+1062   2              draw_byte+=0xF0;
+1063   2            if(test_bit(font16x16[31], dr) > 0)
+1064   2              draw_byte+=0x0F;
+1065   2            oled_Data(draw_byte);
+1066   2            
+1067   2            draw_byte = 0x00;
+1068   2            if(test_bit(font16x16[32], dr) > 0)
+1069   2              draw_byte+=0xF0;
+1070   2            if(test_bit(font16x16[33], dr) > 0)
+1071   2              draw_byte+=0x0F;
+1072   2            oled_Data(draw_byte);   
+1073   2        }
+1074   1      }
+1075          void drawChar16x16_toDisplay_Array(const unsigned char* arr16x16, unsigned char col, unsigned char row){
+1076   1        Set_Column_Address(col, col+3);
+1077   1        Set_Row_Address(row,row+15);
+1078   1        writeRAMCommand();  
+1079   1        for(dr = 0; dr < 8;dr++){
+1080   2            draw_byte = 0x00;
+1081   2            if(test_bit(arr16x16[2], dr) > 0)
+1082   2              draw_byte+=0xF0;
+1083   2            if(test_bit(arr16x16[3], dr) > 0)
+1084   2              draw_byte+=0x0F;
+1085   2            oled_Data(draw_byte);
+1086   2            
+1087   2            draw_byte = 0x00;
+1088   2            if(test_bit(arr16x16[4], dr) > 0)
+1089   2              draw_byte+=0xF0;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 22  
+
+1090   2            if(test_bit(arr16x16[5], dr) > 0)
+1091   2              draw_byte+=0x0F;
+1092   2            oled_Data(draw_byte);   
+1093   2        }
+1094   1        for(dr = 0; dr < 8;dr++){
+1095   2            draw_byte = 0x00;
+1096   2            if(test_bit(arr16x16[18], dr) > 0)
+1097   2              draw_byte+=0xF0;
+1098   2            if(test_bit(arr16x16[19], dr) > 0)
+1099   2              draw_byte+=0x0F;
+1100   2            oled_Data(draw_byte);
+1101   2            
+1102   2            draw_byte = 0x00;
+1103   2            if(test_bit(arr16x16[20], dr) > 0)
+1104   2              draw_byte+=0xF0;
+1105   2            if(test_bit(arr16x16[21], dr) > 0)
+1106   2              draw_byte+=0x0F;
+1107   2            oled_Data(draw_byte);   
+1108   2        }
+1109   1        for(dr = 0; dr < 8;dr++){
+1110   2            draw_byte = 0x00;
+1111   2            if(test_bit(arr16x16[6], dr) > 0)
+1112   2              draw_byte+=0xF0;
+1113   2            if(test_bit(arr16x16[7], dr) > 0)
+1114   2              draw_byte+=0x0F;
+1115   2            oled_Data(draw_byte);
+1116   2            
+1117   2            draw_byte = 0x00;
+1118   2            if(test_bit(arr16x16[8], dr) > 0)
+1119   2              draw_byte+=0xF0;
+1120   2            if(test_bit(arr16x16[9], dr) > 0)
+1121   2              draw_byte+=0x0F;
+1122   2            oled_Data(draw_byte);   
+1123   2        }
+1124   1        for(dr = 0; dr < 8;dr++){
+1125   2            draw_byte = 0x00;
+1126   2            if(test_bit(arr16x16[22], dr) > 0)
+1127   2              draw_byte+=0xF0;
+1128   2            if(test_bit(arr16x16[23], dr) > 0)
+1129   2              draw_byte+=0x0F;
+1130   2            oled_Data(draw_byte);
+1131   2            
+1132   2            draw_byte = 0x00;
+1133   2            if(test_bit(arr16x16[24], dr) > 0)
+1134   2              draw_byte+=0xF0;
+1135   2            if(test_bit(arr16x16[25], dr) > 0)
+1136   2              draw_byte+=0x0F;
+1137   2            oled_Data(draw_byte);   
+1138   2        }
+1139   1        for(dr = 0; dr < 8;dr++){
+1140   2            draw_byte = 0x00;
+1141   2            if(test_bit(arr16x16[10], dr) > 0)
+1142   2              draw_byte+=0xF0;
+1143   2            if(test_bit(arr16x16[11], dr) > 0)
+1144   2              draw_byte+=0x0F;
+1145   2            oled_Data(draw_byte);
+1146   2            
+1147   2            draw_byte = 0x00;
+1148   2            if(test_bit(arr16x16[12], dr) > 0)
+1149   2              draw_byte+=0xF0;
+1150   2            if(test_bit(arr16x16[13], dr) > 0)
+1151   2              draw_byte+=0x0F;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 23  
+
+1152   2            oled_Data(draw_byte);   
+1153   2        }
+1154   1        for(dr = 0; dr < 8;dr++){
+1155   2            draw_byte = 0x00;
+1156   2            if(test_bit(arr16x16[26], dr) > 0)
+1157   2              draw_byte+=0xF0;
+1158   2            if(test_bit(arr16x16[27], dr) > 0)
+1159   2              draw_byte+=0x0F;
+1160   2            oled_Data(draw_byte);
+1161   2            
+1162   2            draw_byte = 0x00;
+1163   2            if(test_bit(arr16x16[28], dr) > 0)
+1164   2              draw_byte+=0xF0;
+1165   2            if(test_bit(arr16x16[29], dr) > 0)
+1166   2              draw_byte+=0x0F;
+1167   2            oled_Data(draw_byte);   
+1168   2        }
+1169   1        for(dr = 0; dr < 8;dr++){
+1170   2            draw_byte = 0x00;
+1171   2            if(test_bit(arr16x16[14], dr) > 0)
+1172   2              draw_byte+=0xF0;
+1173   2            if(test_bit(arr16x16[15], dr) > 0)
+1174   2              draw_byte+=0x0F;
+1175   2            oled_Data(draw_byte);
+1176   2            
+1177   2            draw_byte = 0x00;
+1178   2            if(test_bit(arr16x16[16], dr) > 0)
+1179   2              draw_byte+=0xF0;
+1180   2            if(test_bit(arr16x16[17], dr) > 0)
+1181   2              draw_byte+=0x0F;
+1182   2            oled_Data(draw_byte);   
+1183   2        }
+1184   1        for(dr = 0; dr < 8;dr++){
+1185   2            draw_byte = 0x00;
+1186   2            if(test_bit(arr16x16[30], dr) > 0)
+1187   2              draw_byte+=0xF0;
+1188   2            if(test_bit(arr16x16[31], dr) > 0)
+1189   2              draw_byte+=0x0F;
+1190   2            oled_Data(draw_byte);
+1191   2            
+1192   2            draw_byte = 0x00;
+1193   2            if(test_bit(arr16x16[32], dr) > 0)
+1194   2              draw_byte+=0xF0;
+1195   2            if(test_bit(arr16x16[33], dr) > 0)
+1196   2              draw_byte+=0x0F;
+1197   2            oled_Data(draw_byte);   
+1198   2        }
+1199   1      }
+1200          /*void drawCharGB2312_toDisplay(unsigned char col, unsigned char row){
+1201            
+1202            Set_Column_Address(col, col+3);
+1203            Set_Row_Address(row,row+15);
+1204            writeRAMCommand();
+1205            for(dr = 0;dr < 8;dr++){
+1206                draw_byte = 0x00;
+1207                if(test_bit(fontGB2312[0], dr) > 0)
+1208                  draw_byte+=0xF0;
+1209                if(test_bit(fontGB2312[1], dr) > 0)
+1210                  draw_byte+=0x0F;
+1211                oled_Data(draw_byte);
+1212                
+1213                draw_byte = 0x00;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 24  
+
+1214                if(test_bit(fontGB2312[2], dr) > 0)
+1215                  draw_byte+=0xF0;
+1216                if(test_bit(fontGB2312[3], dr) > 0)
+1217                  draw_byte+=0x0F;
+1218                oled_Data(draw_byte);
+1219            }
+1220            for(dr = 0;dr < 8;dr++){
+1221                draw_byte = 0x00;
+1222                if(test_bit(fontGB2312[16], dr) > 0)
+1223                  draw_byte+=0xF0;
+1224                if(test_bit(fontGB2312[17], dr) > 0)
+1225                  draw_byte+=0x0F;
+1226                oled_Data(draw_byte);
+1227                
+1228                draw_byte = 0x00;
+1229                if(test_bit(fontGB2312[18], dr) > 0)
+1230                  draw_byte+=0xF0;
+1231                if(test_bit(fontGB2312[19], dr) > 0)
+1232                  draw_byte+=0x0F;
+1233                oled_Data(draw_byte);
+1234            } 
+1235            for(dr = 0;dr < 8;dr++){
+1236                draw_byte = 0x00;
+1237                if(test_bit(fontGB2312[4], dr) > 0)
+1238                  draw_byte+=0xF0;
+1239                if(test_bit(fontGB2312[5], dr) > 0)
+1240                  draw_byte+=0x0F;
+1241                oled_Data(draw_byte);
+1242                
+1243                draw_byte = 0x00;
+1244                if(test_bit(fontGB2312[6], dr) > 0)
+1245                  draw_byte+=0xF0;
+1246                if(test_bit(fontGB2312[7], dr) > 0)
+1247                  draw_byte+=0x0F;
+1248                oled_Data(draw_byte);
+1249            }
+1250            for(dr = 0;dr < 8;dr++){
+1251                draw_byte = 0x00;
+1252                if(test_bit(fontGB2312[20], dr) > 0)
+1253                  draw_byte+=0xF0;
+1254                if(test_bit(fontGB2312[21], dr) > 0)
+1255                  draw_byte+=0x0F;
+1256                oled_Data(draw_byte);
+1257                
+1258                draw_byte = 0x00;
+1259                if(test_bit(fontGB2312[22], dr) > 0)
+1260                  draw_byte+=0xF0;
+1261                if(test_bit(fontGB2312[23], dr) > 0)
+1262                  draw_byte+=0x0F;
+1263                oled_Data(draw_byte);
+1264            }
+1265            for(dr = 0;dr < 8;dr++){
+1266                draw_byte = 0x00;
+1267                if(test_bit(fontGB2312[8], dr) > 0)
+1268                  draw_byte+=0xF0;
+1269                if(test_bit(fontGB2312[9], dr) > 0)
+1270                  draw_byte+=0x0F;
+1271                oled_Data(draw_byte);
+1272                
+1273                draw_byte = 0x00;
+1274                if(test_bit(fontGB2312[10], dr) > 0)
+1275                  draw_byte+=0xF0;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 25  
+
+1276                if(test_bit(fontGB2312[11], dr) > 0)
+1277                  draw_byte+=0x0F;
+1278                oled_Data(draw_byte);
+1279            }
+1280            for(dr = 0;dr < 8;dr++){
+1281                draw_byte = 0x00;
+1282                if(test_bit(fontGB2312[24], dr) > 0)
+1283                  draw_byte+=0xF0;
+1284                if(test_bit(fontGB2312[25], dr) > 0)
+1285                  draw_byte+=0x0F;
+1286                oled_Data(draw_byte);
+1287                
+1288                draw_byte = 0x00;
+1289                if(test_bit(fontGB2312[26], dr) > 0)
+1290                  draw_byte+=0xF0;
+1291                if(test_bit(fontGB2312[27], dr) > 0)
+1292                  draw_byte+=0x0F;
+1293                oled_Data(draw_byte);
+1294            }
+1295            for(dr = 0;dr < 8;dr++){
+1296                draw_byte = 0x00;
+1297                if(test_bit(fontGB2312[12], dr) > 0)
+1298                  draw_byte+=0xF0;
+1299                if(test_bit(fontGB2312[13], dr) > 0)
+1300                  draw_byte+=0x0F;
+1301                oled_Data(draw_byte);
+1302                
+1303                draw_byte = 0x00;
+1304                if(test_bit(fontGB2312[14], dr) > 0)
+1305                  draw_byte+=0xF0;
+1306                if(test_bit(fontGB2312[15], dr) > 0)
+1307                  draw_byte+=0x0F;
+1308                oled_Data(draw_byte);
+1309            }
+1310            for(dr = 0;dr < 8;dr++){
+1311                draw_byte = 0x00;
+1312                if(test_bit(fontGB2312[28], dr) > 0)
+1313                  draw_byte+=0xF0;
+1314                if(test_bit(fontGB2312[29], dr) > 0)
+1315                  draw_byte+=0x0F;
+1316                oled_Data(draw_byte);
+1317                
+1318                draw_byte = 0x00;
+1319                if(test_bit(fontGB2312[30], dr) > 0)
+1320                  draw_byte+=0xF0;
+1321                if(test_bit(fontGB2312[31], dr) > 0)
+1322                  draw_byte+=0x0F;
+1323                oled_Data(draw_byte);
+1324            }
+1325          }*/
+1326          
+1327          
+1328          void put_5x7ASCII_CharOnDisplay(unsigned char ch, unsigned char col, unsigned char row, unsigned char brig
+             -htness){
+1329   1        /*
+1330   1        Address = getAddress_5x7_ASCII(ch); 
+1331   1        
+1332   1        address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1333   1        address_BYTE2     = (Address & 0x0000FF00)>>8;
+1334   1        address_BYTE3_LSB = (Address & 0x000000FF);
+1335   1        
+1336   1        SFRPAGE = SPI0_PAGE;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 26  
+
+1337   1        SPIEN   = 0;  
+1338   1        SFRPAGE = 0x0F; 
+1339   1        //MF_SO   = 1;      //P3^3 = 1; 
+1340   1        MF_CS2  = 0;  
+1341   1        */
+1342   1        /*
+1343   1        sendMF_byte_to_Display(0x0B);
+1344   1        send24bitAddressToDisplay();
+1345   1        sendMF_byte_to_Display(0x00);
+1346   1        
+1347   1        read_5x7_ASCII_CharFromDisplay();
+1348   1        */
+1349   1        /*
+1350   1        MF_CS2 = 1;
+1351   1        SFRPAGE = SPI0_PAGE;
+1352   1        SPIEN = 1;
+1353   1        SFRPAGE = 0x0F; 
+1354   1        */
+1355   1        //drawChar5x7ASCII_toDisplay(col, row); 
+1356   1        switch(ch){
+1357   2            case ' ': drawChar5x7ASCII_toDisplay_Array(space_5x7_ASCII, col, row, brightness); break;
+1358   2            case 'A': drawChar5x7ASCII_toDisplay_Array(A_5x7_ASCII, col, row, brightness); break;
+1359   2            case 'B': drawChar5x7ASCII_toDisplay_Array(B_5x7_ASCII, col, row, brightness); break;
+1360   2            case 'C': drawChar5x7ASCII_toDisplay_Array(C_5x7_ASCII, col, row, brightness); break;
+1361   2            case 'D': drawChar5x7ASCII_toDisplay_Array(D_5x7_ASCII, col, row, brightness); break;
+1362   2            case 'E': drawChar5x7ASCII_toDisplay_Array(E_5x7_ASCII, col, row, brightness); break;
+1363   2            case 'F': drawChar5x7ASCII_toDisplay_Array(F_5x7_ASCII, col, row, brightness); break;
+1364   2            case 'G': drawChar5x7ASCII_toDisplay_Array(G_5x7_ASCII, col, row, brightness); break;
+1365   2            case 'H': drawChar5x7ASCII_toDisplay_Array(H_5x7_ASCII, col, row, brightness); break;
+1366   2            case 'I': drawChar5x7ASCII_toDisplay_Array(I_5x7_ASCII, col, row, brightness); break;
+1367   2            case 'J': drawChar5x7ASCII_toDisplay_Array(J_5x7_ASCII, col, row, brightness); break;
+1368   2            case 'K': drawChar5x7ASCII_toDisplay_Array(K_5x7_ASCII, col, row, brightness); break;
+1369   2            case 'L': drawChar5x7ASCII_toDisplay_Array(L_5x7_ASCII, col, row, brightness); break;
+1370   2            case 'M': drawChar5x7ASCII_toDisplay_Array(M_5x7_ASCII, col, row, brightness); break;
+1371   2            case 'N': drawChar5x7ASCII_toDisplay_Array(N_5x7_ASCII, col, row, brightness); break;
+1372   2            case 'O': drawChar5x7ASCII_toDisplay_Array(O_5x7_ASCII, col, row, brightness); break;
+1373   2            case 'P': drawChar5x7ASCII_toDisplay_Array(P_5x7_ASCII, col, row, brightness); break;
+1374   2            case 'Q': drawChar5x7ASCII_toDisplay_Array(Q_5x7_ASCII, col, row, brightness); break;
+1375   2            case 'R': drawChar5x7ASCII_toDisplay_Array(R_5x7_ASCII, col, row, brightness); break;
+1376   2            case 'S': drawChar5x7ASCII_toDisplay_Array(S_5x7_ASCII, col, row, brightness); break;
+1377   2            case 'T': drawChar5x7ASCII_toDisplay_Array(T_5x7_ASCII, col, row, brightness); break;
+1378   2            case 'U': drawChar5x7ASCII_toDisplay_Array(U_5x7_ASCII, col, row, brightness); break;
+1379   2            case 'V': drawChar5x7ASCII_toDisplay_Array(V_5x7_ASCII, col, row, brightness); break;
+1380   2            case 'W': drawChar5x7ASCII_toDisplay_Array(W_5x7_ASCII, col, row, brightness); break;
+1381   2            case 'X': drawChar5x7ASCII_toDisplay_Array(X_5x7_ASCII, col, row, brightness); break;
+1382   2            case 'Y': drawChar5x7ASCII_toDisplay_Array(Y_5x7_ASCII, col, row, brightness); break;
+1383   2            case 'Z': drawChar5x7ASCII_toDisplay_Array(Z_5x7_ASCII, col, row, brightness); break;
+1384   2            case '<': drawChar5x7ASCII_toDisplay_Array(left_5x7_ASCII, col, row, brightness); break;
+1385   2            case '>': drawChar5x7ASCII_toDisplay_Array(right_5x7_ASCII, col, row, brightness); break;
+1386   2            case '\"': drawChar5x7ASCII_toDisplay_Array(quote_5x7_ASCII, col, row, brightness); break;
+1387   2            case ',': drawChar5x7ASCII_toDisplay_Array(zpt_5x7_ASCII, col, row, brightness); break;
+1388   2          } 
+1389   1        
+1390   1      }
+1391          
+1392          void put_7x8ASCII_CharOnDisplay(unsigned char ch, unsigned char col, unsigned char row){
+1393   1      
+1394   1        Address = getAddress_7x8_ASCII(ch);
+1395   1        
+1396   1        address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1397   1        address_BYTE2     = (Address & 0x0000FF00)>>8;
+1398   1        address_BYTE3_LSB = (Address & 0x000000FF);
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 27  
+
+1399   1        
+1400   1        SFRPAGE = SPI0_PAGE;
+1401   1        SPIEN   = 0;  
+1402   1        SFRPAGE = 0x0F; 
+1403   1        //MF_SO   = 1;      //P3^3 = 1; 
+1404   1        MF_CS2  = 0;  
+1405   1        
+1406   1        sendMF_byte_to_Display(0x0B);
+1407   1        send24bitAddressToDisplay();
+1408   1        sendMF_byte_to_Display(0x00);
+1409   1        
+1410   1        read_7x8_ASCII_CharFromDisplay();
+1411   1        
+1412   1        MF_CS2 = 1;
+1413   1        SFRPAGE = SPI0_PAGE;
+1414   1        SPIEN = 1;
+1415   1        SFRPAGE = 0x0F;
+1416   1        
+1417   1        drawChar7x8ASCII_toDisplay(col, row); 
+1418   1      }
+1419          
+1420          void put_8x16ASCII_CharOnDisplay(unsigned char ch, unsigned char col, unsigned char row, unsigned char bri
+             -ghtness){
+1421   1        /*
+1422   1        Address = getAddress_8x16_ASCII(ch);
+1423   1        
+1424   1        address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1425   1        address_BYTE2     = (Address & 0x0000FF00)>>8;
+1426   1        address_BYTE3_LSB = (Address & 0x000000FF); 
+1427   1        
+1428   1        SFRPAGE = SPI0_PAGE;
+1429   1        SPIEN   = 0;  
+1430   1        SFRPAGE = 0x0F; 
+1431   1        //MF_SO   = 1;      //P3^3 = 1; 
+1432   1        MF_CS2  = 0;  
+1433   1        
+1434   1        sendMF_byte_to_Display(0x0B);
+1435   1        send24bitAddressToDisplay();
+1436   1        sendMF_byte_to_Display(0x00);
+1437   1        
+1438   1        read_8x16_ASCII_CharFromDisplay();
+1439   1        
+1440   1        MF_CS2 = 1;
+1441   1        SFRPAGE = SPI0_PAGE;
+1442   1        SPIEN = 1;
+1443   1        SFRPAGE = 0x0F;
+1444   1        
+1445   1        drawChar8x16_toDisplay(col, row); 
+1446   1        */
+1447   1        switch(ch){
+1448   2            case ' ': drawChar8x16_toDisplay_Array(space_8x16_ASCII, col, row, brightness); break;
+1449   2            case 'A': drawChar8x16_toDisplay_Array(A_8x16_ASCII, col, row, brightness); break;
+1450   2            case 'B': drawChar8x16_toDisplay_Array(B_8x16_ASCII, col, row, brightness); break;
+1451   2            case 'C': drawChar8x16_toDisplay_Array(C_8x16_ASCII, col, row, brightness); break;
+1452   2            case 'D': drawChar8x16_toDisplay_Array(D_8x16_ASCII, col, row, brightness); break;
+1453   2            case 'E': drawChar8x16_toDisplay_Array(E_8x16_ASCII, col, row, brightness); break;
+1454   2            case 'F': drawChar8x16_toDisplay_Array(F_8x16_ASCII, col, row, brightness); break;
+1455   2            case 'G': drawChar8x16_toDisplay_Array(G_8x16_ASCII, col, row, brightness); break;
+1456   2            case 'H': drawChar8x16_toDisplay_Array(H_8x16_ASCII, col, row, brightness); break;
+1457   2            case 'I': drawChar8x16_toDisplay_Array(I_8x16_ASCII, col, row, brightness); break;
+1458   2            case 'J': drawChar8x16_toDisplay_Array(J_8x16_ASCII, col, row, brightness); break;
+1459   2            case 'K': drawChar8x16_toDisplay_Array(K_8x16_ASCII, col, row, brightness); break;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 28  
+
+1460   2            case 'L': drawChar8x16_toDisplay_Array(L_8x16_ASCII, col, row, brightness); break;
+1461   2            case 'M': drawChar8x16_toDisplay_Array(M_8x16_ASCII, col, row, brightness); break;
+1462   2            case 'N': drawChar8x16_toDisplay_Array(N_8x16_ASCII, col, row, brightness); break;
+1463   2            case 'O': drawChar8x16_toDisplay_Array(O_8x16_ASCII, col, row, brightness); break;
+1464   2            case 'P': drawChar8x16_toDisplay_Array(P_8x16_ASCII, col, row, brightness); break;
+1465   2            case 'Q': drawChar8x16_toDisplay_Array(Q_8x16_ASCII, col, row, brightness); break;
+1466   2            case 'R': drawChar8x16_toDisplay_Array(R_8x16_ASCII, col, row, brightness); break;
+1467   2            case 'S': drawChar8x16_toDisplay_Array(S_8x16_ASCII, col, row, brightness); break;
+1468   2            case 'T': drawChar8x16_toDisplay_Array(T_8x16_ASCII, col, row, brightness); break;
+1469   2            case 'U': drawChar8x16_toDisplay_Array(U_8x16_ASCII, col, row, brightness); break;
+1470   2            case 'V': drawChar8x16_toDisplay_Array(V_8x16_ASCII, col, row, brightness); break;
+1471   2            case 'W': drawChar8x16_toDisplay_Array(W_8x16_ASCII, col, row, brightness); break;
+1472   2            case 'X': drawChar8x16_toDisplay_Array(X_8x16_ASCII, col, row, brightness); break;
+1473   2            case 'Y': drawChar8x16_toDisplay_Array(Y_8x16_ASCII, col, row, brightness); break;
+1474   2            case 'Z': drawChar8x16_toDisplay_Array(Z_8x16_ASCII, col, row, brightness); break;
+1475   2            case 'a': drawChar8x16_toDisplay_Array(a__8x16_ASCII, col, row, brightness); break;
+1476   2            case 'b': drawChar8x16_toDisplay_Array(b__8x16_ASCII, col, row, brightness); break; 
+1477   2            case 'c': drawChar8x16_toDisplay_Array(c__8x16_ASCII, col, row, brightness); break;
+1478   2            case 'd': drawChar8x16_toDisplay_Array(d__8x16_ASCII, col, row, brightness); break; 
+1479   2            case 'e': drawChar8x16_toDisplay_Array(e__8x16_ASCII, col, row, brightness); break; 
+1480   2            case 'f': drawChar8x16_toDisplay_Array(f__8x16_ASCII, col, row, brightness); break; 
+1481   2            case 'g': drawChar8x16_toDisplay_Array(g__8x16_ASCII, col, row, brightness); break;
+1482   2            case 'h': drawChar8x16_toDisplay_Array(h__8x16_ASCII, col, row, brightness); break; 
+1483   2            case 'i': drawChar8x16_toDisplay_Array(i__8x16_ASCII, col, row, brightness); break; 
+1484   2            case 'j': drawChar8x16_toDisplay_Array(j__8x16_ASCII, col, row, brightness); break;
+1485   2            case 'k': drawChar8x16_toDisplay_Array(k__8x16_ASCII, col, row, brightness); break;
+1486   2            case 'l': drawChar8x16_toDisplay_Array(l__8x16_ASCII, col, row, brightness); break;       
+1487   2            case 'm': drawChar8x16_toDisplay_Array(m__8x16_ASCII, col, row, brightness); break;
+1488   2            case 'n': drawChar8x16_toDisplay_Array(n__8x16_ASCII, col, row, brightness); break;
+1489   2            case 'o': drawChar8x16_toDisplay_Array(o__8x16_ASCII, col, row, brightness); break;
+1490   2            case 'p': drawChar8x16_toDisplay_Array(p__8x16_ASCII, col, row, brightness); break; 
+1491   2            case 'q': drawChar8x16_toDisplay_Array(q__8x16_ASCII, col, row, brightness); break; 
+1492   2            case 'r': drawChar8x16_toDisplay_Array(r__8x16_ASCII, col, row, brightness); break;
+1493   2            case 's': drawChar8x16_toDisplay_Array(s__8x16_ASCII, col, row, brightness); break; 
+1494   2            case 't': drawChar8x16_toDisplay_Array(t__8x16_ASCII, col, row, brightness); break;       
+1495   2            case 'u': drawChar8x16_toDisplay_Array(u__8x16_ASCII, col, row, brightness); break;
+1496   2            case 'v': drawChar8x16_toDisplay_Array(v__8x16_ASCII, col, row, brightness); break;
+1497   2            case 'w': drawChar8x16_toDisplay_Array(w__8x16_ASCII, col, row, brightness); break;
+1498   2            case 'x': drawChar8x16_toDisplay_Array(x__8x16_ASCII, col, row, brightness); break; 
+1499   2            case 'y': drawChar8x16_toDisplay_Array(y__8x16_ASCII, col, row, brightness); break; 
+1500   2            case 'z': drawChar8x16_toDisplay_Array(z__8x16_ASCII, col, row, brightness); break;       
+1501   2            case '0': drawChar8x16_toDisplay_Array(number_0_8x16_ASCII, col, row, brightness); break;     
+1502   2            case '1': drawChar8x16_toDisplay_Array(number_1_8x16_ASCII, col, row, brightness); break;     
+1503   2            case '2': drawChar8x16_toDisplay_Array(number_2_8x16_ASCII, col, row, brightness); break;
+1504   2            case '3': drawChar8x16_toDisplay_Array(number_3_8x16_ASCII, col, row, brightness); break;
+1505   2            case '4': drawChar8x16_toDisplay_Array(number_4_8x16_ASCII, col, row, brightness); break;
+1506   2            case '5': drawChar8x16_toDisplay_Array(number_5_8x16_ASCII, col, row, brightness); break;
+1507   2            case '6': drawChar8x16_toDisplay_Array(number_6_8x16_ASCII, col, row, brightness); break;
+1508   2            case '7': drawChar8x16_toDisplay_Array(number_7_8x16_ASCII, col, row, brightness); break;
+1509   2            case '8': drawChar8x16_toDisplay_Array(number_8_8x16_ASCII, col, row, brightness); break;
+1510   2            case '9': drawChar8x16_toDisplay_Array(number_9_8x16_ASCII, col, row, brightness); break;
+1511   2            case 0x00: drawChar8x16_toDisplay_Array(number_0_8x16_ASCII, col, row, brightness); break;
+1512   2            case 0x01: drawChar8x16_toDisplay_Array(number_1_8x16_ASCII, col, row, brightness); break;
+1513   2            case 0x02: drawChar8x16_toDisplay_Array(number_2_8x16_ASCII, col, row, brightness); break;
+1514   2            case 0x03: drawChar8x16_toDisplay_Array(number_3_8x16_ASCII, col, row, brightness); break;
+1515   2            case 0x04: drawChar8x16_toDisplay_Array(number_4_8x16_ASCII, col, row, brightness); break;
+1516   2            case 0x05: drawChar8x16_toDisplay_Array(number_5_8x16_ASCII, col, row, brightness); break;
+1517   2            case 0x06: drawChar8x16_toDisplay_Array(number_6_8x16_ASCII, col, row, brightness); break;
+1518   2            case 0x07: drawChar8x16_toDisplay_Array(number_7_8x16_ASCII, col, row, brightness); break;
+1519   2            case 0x08: drawChar8x16_toDisplay_Array(number_8_8x16_ASCII, col, row, brightness); break;
+1520   2            case 0x09: drawChar8x16_toDisplay_Array(number_9_8x16_ASCII, col, row, brightness); break;
+1521   2            case ',': drawChar8x16_toDisplay_Array(zpt_8x16_ASCII, col, row, brightness); break;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 29  
+
+1522   2            case '.': drawChar8x16_toDisplay_Array(tck_8x16_ASCII, col, row, brightness); break;
+1523   2            case ':': drawChar8x16_toDisplay_Array(double_tck_8x16_ASCII, col, row, brightness); break;
+1524   2            case '-': drawChar8x16_toDisplay_Array(minus_8x16_ASCII, col, row, brightness); break;
+1525   2            case '=': drawChar8x16_toDisplay_Array(ravno_8x16_ASCII, col, row, brightness); break;
+1526   2            case '+': drawChar8x16_toDisplay_Array(plus_8x16_ASCII, col, row, brightness); break;
+1527   2            case '(': drawChar8x16_toDisplay_Array(skobka1_8x16_ASCII, col, row, brightness); break;
+1528   2            case ')': drawChar8x16_toDisplay_Array(skobka2_8x16_ASCII, col, row, brightness); break;
+1529   2            case '/': drawChar8x16_toDisplay_Array(kosaya_right_8x16_ASCII, col, row, brightness); break;
+1530   2            case '%': drawChar8x16_toDisplay_Array(procent_8x16_ASCII, col, row, brightness); break;
+1531   2          } 
+1532   1      }
+1533          void put_WidthAdjusted_Arial_ASCII_CharOnDisplay(unsigned char ch, unsigned char col, unsigned char row){
+1534   1        /*
+1535   1        Address = getAddress_WidthAdjusted_Arial_ASCII(ch);
+1536   1        
+1537   1        address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1538   1        address_BYTE2     = (Address & 0x0000FF00)>>8;
+1539   1        address_BYTE3_LSB = (Address & 0x000000FF); 
+1540   1        
+1541   1        SFRPAGE = SPI0_PAGE;
+1542   1        SPIEN   = 0;  
+1543   1        SFRPAGE = 0x0F; 
+1544   1        MF_CS2  = 0;  
+1545   1        
+1546   1        sendMF_byte_to_Display(0x0B);
+1547   1        send24bitAddressToDisplay();
+1548   1        sendMF_byte_to_Display(0x00);
+1549   1        
+1550   1        read_16x16_Font_CharFromDisplay();
+1551   1        
+1552   1        MF_CS2 = 1;
+1553   1        SFRPAGE = SPI0_PAGE;
+1554   1        SPIEN = 1;
+1555   1        SFRPAGE = 0x0F;
+1556   1        
+1557   1        drawChar16x16_toDisplay(col, row);  
+1558   1        */
+1559   1          switch(ch){
+1560   2            case ' ': drawChar16x16_toDisplay_Array(space_WidthAdjusted_Arial_ASCII, col, row); break;
+1561   2            case 'A': drawChar16x16_toDisplay_Array(A_WidthAdjusted_Arial_ASCII, col, row); break;
+1562   2            case 'B': drawChar16x16_toDisplay_Array(B_WidthAdjusted_Arial_ASCII, col, row); break;
+1563   2            case 'C': drawChar16x16_toDisplay_Array(C_WidthAdjusted_Arial_ASCII, col, row); break;
+1564   2            case 'D': drawChar16x16_toDisplay_Array(D_WidthAdjusted_Arial_ASCII, col, row); break;
+1565   2            case 'E': drawChar16x16_toDisplay_Array(E_WidthAdjusted_Arial_ASCII, col, row); break;
+1566   2            case 'F': drawChar16x16_toDisplay_Array(F_WidthAdjusted_Arial_ASCII, col, row); break;
+1567   2            case 'G': drawChar16x16_toDisplay_Array(G_WidthAdjusted_Arial_ASCII, col, row); break;
+1568   2            case 'H': drawChar16x16_toDisplay_Array(H_WidthAdjusted_Arial_ASCII, col, row); break;
+1569   2            case 'I': drawChar16x16_toDisplay_Array(I_WidthAdjusted_Arial_ASCII, col, row); break;
+1570   2            case 'J': drawChar16x16_toDisplay_Array(J_WidthAdjusted_Arial_ASCII, col, row); break;
+1571   2            case 'K': drawChar16x16_toDisplay_Array(K_WidthAdjusted_Arial_ASCII, col, row); break;
+1572   2            case 'L': drawChar16x16_toDisplay_Array(L_WidthAdjusted_Arial_ASCII, col, row); break;
+1573   2            case 'M': drawChar16x16_toDisplay_Array(M_WidthAdjusted_Arial_ASCII, col, row); break;
+1574   2            case 'N': drawChar16x16_toDisplay_Array(N_WidthAdjusted_Arial_ASCII, col, row); break;
+1575   2            case 'O': drawChar16x16_toDisplay_Array(O_WidthAdjusted_Arial_ASCII, col, row); break;
+1576   2            case 'P': drawChar16x16_toDisplay_Array(P_WidthAdjusted_Arial_ASCII, col, row); break;
+1577   2            case 'Q': drawChar16x16_toDisplay_Array(Q_WidthAdjusted_Arial_ASCII, col, row); break;
+1578   2            case 'R': drawChar16x16_toDisplay_Array(R_WidthAdjusted_Arial_ASCII, col, row); break;
+1579   2            case 'S': drawChar16x16_toDisplay_Array(S_WidthAdjusted_Arial_ASCII, col, row); break;
+1580   2            case 'T': drawChar16x16_toDisplay_Array(T_WidthAdjusted_Arial_ASCII, col, row); break;
+1581   2            case 'U': drawChar16x16_toDisplay_Array(U_WidthAdjusted_Arial_ASCII, col, row); break;
+1582   2            case 'V': drawChar16x16_toDisplay_Array(V_WidthAdjusted_Arial_ASCII, col, row); break;
+1583   2            case 'W': drawChar16x16_toDisplay_Array(W_WidthAdjusted_Arial_ASCII, col, row); break;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 30  
+
+1584   2            case 'X': drawChar16x16_toDisplay_Array(X_WidthAdjusted_Arial_ASCII, col, row); break;
+1585   2            case 'Y': drawChar16x16_toDisplay_Array(Y_WidthAdjusted_Arial_ASCII, col, row); break;
+1586   2            case 'Z': drawChar16x16_toDisplay_Array(Z_WidthAdjusted_Arial_ASCII, col, row); break;  
+1587   2            case 'a': drawChar16x16_toDisplay_Array(a__WidthAdjusted_Arial_ASCII, col, row); break;
+1588   2            case 'b': drawChar16x16_toDisplay_Array(b__WidthAdjusted_Arial_ASCII, col, row); break;
+1589   2            case 'c': drawChar16x16_toDisplay_Array(c__WidthAdjusted_Arial_ASCII, col, row); break;
+1590   2            case 'd': drawChar16x16_toDisplay_Array(d__WidthAdjusted_Arial_ASCII, col, row); break;
+1591   2            case 'e': drawChar16x16_toDisplay_Array(e__WidthAdjusted_Arial_ASCII, col, row); break;
+1592   2            case 'f': drawChar16x16_toDisplay_Array(f__WidthAdjusted_Arial_ASCII, col, row); break;
+1593   2            case 'g': drawChar16x16_toDisplay_Array(g__WidthAdjusted_Arial_ASCII, col, row); break;
+1594   2            case 'h': drawChar16x16_toDisplay_Array(h__WidthAdjusted_Arial_ASCII, col, row); break;
+1595   2            case 'i': drawChar16x16_toDisplay_Array(i__WidthAdjusted_Arial_ASCII, col, row); break;
+1596   2            case 'j': drawChar16x16_toDisplay_Array(j__WidthAdjusted_Arial_ASCII, col, row); break;
+1597   2            case 'k': drawChar16x16_toDisplay_Array(k__WidthAdjusted_Arial_ASCII, col, row); break;
+1598   2            case 'l': drawChar16x16_toDisplay_Array(l__WidthAdjusted_Arial_ASCII, col, row); break;
+1599   2            case 'm': drawChar16x16_toDisplay_Array(m__WidthAdjusted_Arial_ASCII, col, row); break;
+1600   2            case 'n': drawChar16x16_toDisplay_Array(n__WidthAdjusted_Arial_ASCII, col, row); break;
+1601   2            case 'o': drawChar16x16_toDisplay_Array(o__WidthAdjusted_Arial_ASCII, col, row); break;
+1602   2            case 'p': drawChar16x16_toDisplay_Array(p__WidthAdjusted_Arial_ASCII, col, row); break;
+1603   2            case 'q': drawChar16x16_toDisplay_Array(q__WidthAdjusted_Arial_ASCII, col, row); break;
+1604   2            case 'r': drawChar16x16_toDisplay_Array(r__WidthAdjusted_Arial_ASCII, col, row); break;
+1605   2            case 's': drawChar16x16_toDisplay_Array(s__WidthAdjusted_Arial_ASCII, col, row); break;
+1606   2            case 't': drawChar16x16_toDisplay_Array(t__WidthAdjusted_Arial_ASCII, col, row); break;
+1607   2            case 'u': drawChar16x16_toDisplay_Array(u__WidthAdjusted_Arial_ASCII, col, row); break;
+1608   2            case 'v': drawChar16x16_toDisplay_Array(v__WidthAdjusted_Arial_ASCII, col, row); break;
+1609   2            case 'w': drawChar16x16_toDisplay_Array(w__WidthAdjusted_Arial_ASCII, col, row); break;
+1610   2            case 'x': drawChar16x16_toDisplay_Array(x__WidthAdjusted_Arial_ASCII, col, row); break;
+1611   2            case 'y': drawChar16x16_toDisplay_Array(y__WidthAdjusted_Arial_ASCII, col, row); break;
+1612   2            case 'z': drawChar16x16_toDisplay_Array(z__WidthAdjusted_Arial_ASCII, col, row); break;
+1613   2            case '0': drawChar16x16_toDisplay_Array(number_0_WidthAdjusted_Arial_ASCII, col, row); break;
+1614   2            case '1': drawChar16x16_toDisplay_Array(number_1_WidthAdjusted_Arial_ASCII, col, row); break;
+1615   2            case '2': drawChar16x16_toDisplay_Array(number_2_WidthAdjusted_Arial_ASCII, col, row); break;
+1616   2            case '3': drawChar16x16_toDisplay_Array(number_3_WidthAdjusted_Arial_ASCII, col, row); break;
+1617   2            case '4': drawChar16x16_toDisplay_Array(number_4_WidthAdjusted_Arial_ASCII, col, row); break;
+1618   2            case '5': drawChar16x16_toDisplay_Array(number_5_WidthAdjusted_Arial_ASCII, col, row); break;
+1619   2            case '6': drawChar16x16_toDisplay_Array(number_6_WidthAdjusted_Arial_ASCII, col, row); break;
+1620   2            case '7': drawChar16x16_toDisplay_Array(number_7_WidthAdjusted_Arial_ASCII, col, row); break;
+1621   2            case '8': drawChar16x16_toDisplay_Array(number_8_WidthAdjusted_Arial_ASCII, col, row); break;
+1622   2            case '9': drawChar16x16_toDisplay_Array(number_9_WidthAdjusted_Arial_ASCII, col, row); break;
+1623   2            case ',': drawChar16x16_toDisplay_Array(zpt_WidthAdjusted_Arial_ASCII, col, row); break;
+1624   2            case '.': drawChar16x16_toDisplay_Array(tck_WidthAdjusted_Arial_ASCII, col, row); break;
+1625   2          } 
+1626   1      }
+1627          
+1628          /*void put_8x16Latin_CharOnDisplay(unsigned char ch, unsigned char col, unsigned char row){
+1629            
+1630            Address = getAddress_8x16_Latin(ch);
+1631            
+1632            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1633            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1634            address_BYTE3_LSB = (Address & 0x000000FF);
+1635            
+1636            SFRPAGE = SPI0_PAGE;
+1637            SPIEN   = 0;  
+1638            SFRPAGE = 0x0F; 
+1639            //MF_SO   = 1;      //P3^3 = 1; 
+1640            MF_CS2  = 0;  
+1641            
+1642            sendMF_byte_to_Display(0x0B); 
+1643            send24bitAddressToDisplay();
+1644            sendMF_byte_to_Display(0x00); 
+1645            
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 31  
+
+1646            read_8x16_ASCII_CharFromDisplay('A');
+1647            
+1648            MF_CS2 = 1;
+1649            SFRPAGE = SPI0_PAGE;
+1650            SPIEN = 1;
+1651            SFRPAGE = 0x0F;
+1652            
+1653            drawChar8x16_toDisplay(col, row);
+1654          }*/
+1655          /*void put_WidthAdjusted_Latin_CharOnDisplay(unsigned char ch, unsigned char col, unsigned char row){
+1656          
+1657            Address = getAddress_WidthAdjusted_Latin(ch);
+1658            
+1659            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1660            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1661            address_BYTE3_LSB = (Address & 0x000000FF); 
+1662            
+1663            SFRPAGE = SPI0_PAGE;
+1664            SPIEN   = 0;  
+1665            SFRPAGE = 0x0F; 
+1666            MF_CS2  = 0;  
+1667            
+1668            sendMF_byte_to_Display(0x0B);
+1669            send24bitAddressToDisplay();
+1670            sendMF_byte_to_Display(0x00);
+1671            
+1672            read_16x16_Font_CharFromDisplay(ch);
+1673            
+1674            MF_CS2 = 1;
+1675            SFRPAGE = SPI0_PAGE;
+1676            SPIEN = 1;
+1677            SFRPAGE = 0x0F;
+1678            
+1679            drawChar16x16_toDisplay(col, row);  
+1680          }*/
+1681          /*void put_GB2312_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1682            
+1683            Address = getAddress_GB2312(ch);
+1684            
+1685            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1686            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1687            address_BYTE3_LSB = (Address & 0x000000FF);
+1688            
+1689            SFRPAGE = SPI0_PAGE;
+1690            SPIEN   = 0;  
+1691            SFRPAGE = 0x0F; 
+1692            //MF_SO   = 1;      //P3^3 = 1; 
+1693            MF_CS2  = 0;    
+1694            
+1695            sendMF_byte_to_Display(0x0B); 
+1696            send24bitAddressToDisplay();
+1697            sendMF_byte_to_Display(0x00);   
+1698            read_GB2312_CharFromDisplay();
+1699            
+1700            MF_CS2 = 1; 
+1701            SFRPAGE = SPI0_PAGE;
+1702            SPIEN = 1;    
+1703            SFRPAGE = 0x0F; 
+1704            
+1705            drawCharGB2312_toDisplay(col, row);
+1706          }*/
+1707          
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 32  
+
+1708          /*void put_5x10LCM_1_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1709            
+1710            Address = getAddress_5x10_LCM_1(ch);
+1711            
+1712            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1713            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1714            address_BYTE3_LSB = (Address & 0x000000FF);
+1715            
+1716            SFRPAGE = SPI0_PAGE;
+1717            SPIEN   = 0;  
+1718            SFRPAGE = 0x0F; 
+1719            //MF_SO   = 1;      //P3^3 = 1; 
+1720            MF_CS2  = 0;    
+1721            
+1722            sendMF_byte_to_Display(0x0B); 
+1723            send24bitAddressToDisplay();
+1724            sendMF_byte_to_Display(0x00);   
+1725            read_7x8_ASCII_CharFromDisplay();
+1726            
+1727            MF_CS2 = 1; 
+1728            SFRPAGE = SPI0_PAGE;
+1729            SPIEN = 1;    
+1730            SFRPAGE = 0x0F; 
+1731            
+1732            drawChar7x8ASCII_toDisplay(col, row);
+1733          }
+1734          */
+1735          /*void put_5x10LCM_2_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1736            
+1737            Address = getAddress_5x10_LCM_2(ch);
+1738            
+1739            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1740            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1741            address_BYTE3_LSB = (Address & 0x000000FF);
+1742            
+1743            SFRPAGE = SPI0_PAGE;
+1744            SPIEN   = 0;  
+1745            SFRPAGE = 0x0F; 
+1746            //MF_SO   = 1;      //P3^3 = 1; 
+1747            MF_CS2  = 0;    
+1748            
+1749            sendMF_byte_to_Display(0x0B); 
+1750            send24bitAddressToDisplay();
+1751            sendMF_byte_to_Display(0x00);   
+1752            read_7x8_ASCII_CharFromDisplay();
+1753            
+1754            MF_CS2 = 1; 
+1755            SFRPAGE = SPI0_PAGE;
+1756            SPIEN = 1;    
+1757            SFRPAGE = 0x0F; 
+1758            
+1759            drawChar7x8ASCII_toDisplay(col, row);
+1760          }*/
+1761          /*void put_5x10LCM_3_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1762            
+1763            Address = getAddress_5x10_LCM_3(ch);
+1764            
+1765            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1766            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1767            address_BYTE3_LSB = (Address & 0x000000FF);
+1768            
+1769            SFRPAGE = SPI0_PAGE;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 33  
+
+1770            SPIEN   = 0;  
+1771            SFRPAGE = 0x0F; 
+1772            //MF_SO   = 1;      //P3^3 = 1; 
+1773            MF_CS2  = 0;    
+1774            
+1775            sendMF_byte_to_Display(0x0B); 
+1776            send24bitAddressToDisplay();
+1777            sendMF_byte_to_Display(0x00);   
+1778            read_7x8_ASCII_CharFromDisplay();
+1779            
+1780            MF_CS2 = 1; 
+1781            SFRPAGE = SPI0_PAGE;
+1782            SPIEN = 1;    
+1783            SFRPAGE = 0x0F; 
+1784            
+1785            drawChar7x8ASCII_toDisplay(col, row);
+1786          }*/
+1787          /*void put_5x10LCM_8_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1788            
+1789            Address = getAddress_5x10_LCM_8(ch);
+1790            
+1791            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1792            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1793            address_BYTE3_LSB = (Address & 0x000000FF);
+1794            
+1795            SFRPAGE = SPI0_PAGE;
+1796            SPIEN   = 0;  
+1797            SFRPAGE = 0x0F; 
+1798            //MF_SO   = 1;      //P3^3 = 1; 
+1799            MF_CS2  = 0;    
+1800            
+1801            sendMF_byte_to_Display(0x0B); 
+1802            send24bitAddressToDisplay();
+1803            sendMF_byte_to_Display(0x00);   
+1804            read_7x8_ASCII_CharFromDisplay();
+1805            
+1806            MF_CS2 = 1; 
+1807            SFRPAGE = SPI0_PAGE;
+1808            SPIEN = 1;    
+1809            SFRPAGE = 0x0F; 
+1810            
+1811            drawChar7x8ASCII_toDisplay(col, row);
+1812          }*/
+1813          /*void put_5x10LCM_11_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1814            
+1815            Address = getAddress_5x10_LCM_11(ch);
+1816            
+1817            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1818            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1819            address_BYTE3_LSB = (Address & 0x000000FF);
+1820            
+1821            SFRPAGE = SPI0_PAGE;
+1822            SPIEN   = 0;  
+1823            SFRPAGE = 0x0F; 
+1824            //MF_SO   = 1;      //P3^3 = 1; 
+1825            MF_CS2  = 0;    
+1826            
+1827            sendMF_byte_to_Display(0x0B); 
+1828            send24bitAddressToDisplay();
+1829            sendMF_byte_to_Display(0x00);   
+1830            read_7x8_ASCII_CharFromDisplay();
+1831            
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 34  
+
+1832            MF_CS2 = 1; 
+1833            SFRPAGE = SPI0_PAGE;
+1834            SPIEN = 1;    
+1835            SFRPAGE = 0x0F; 
+1836            
+1837            drawChar7x8ASCII_toDisplay(col, row);
+1838          }*/
+1839          /*void put_5x10LCM_12_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1840            
+1841            Address = getAddress_5x10_LCM_12(ch);
+1842            
+1843            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1844            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1845            address_BYTE3_LSB = (Address & 0x000000FF);
+1846            
+1847            SFRPAGE = SPI0_PAGE;
+1848            SPIEN   = 0;  
+1849            SFRPAGE = 0x0F; 
+1850            //MF_SO   = 1;      //P3^3 = 1; 
+1851            MF_CS2  = 0;    
+1852            
+1853            sendMF_byte_to_Display(0x0B); 
+1854            send24bitAddressToDisplay();
+1855            sendMF_byte_to_Display(0x00);   
+1856            read_7x8_ASCII_CharFromDisplay();
+1857            
+1858            MF_CS2 = 1; 
+1859            SFRPAGE = SPI0_PAGE;
+1860            SPIEN = 1;    
+1861            SFRPAGE = 0x0F; 
+1862            
+1863            drawChar7x8ASCII_toDisplay(col, row);
+1864          }*/
+1865          /*void put_5x10LCM_13_CharOnDisplay(unsigned int ch, unsigned char col, unsigned char row){
+1866            
+1867            Address = getAddress_5x10_LCM_13(ch);
+1868            
+1869            address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1870            address_BYTE2     = (Address & 0x0000FF00)>>8;
+1871            address_BYTE3_LSB = (Address & 0x000000FF);
+1872            
+1873            SFRPAGE = SPI0_PAGE;
+1874            SPIEN   = 0;  
+1875            SFRPAGE = 0x0F; 
+1876            //MF_SO   = 1;      //P3^3 = 1; 
+1877            MF_CS2  = 0;    
+1878            
+1879            sendMF_byte_to_Display(0x0B); 
+1880            send24bitAddressToDisplay();
+1881            sendMF_byte_to_Display(0x00);   
+1882            read_7x8_ASCII_CharFromDisplay();
+1883            
+1884            MF_CS2 = 1; 
+1885            SFRPAGE = SPI0_PAGE;
+1886            SPIEN = 1;    
+1887            SFRPAGE = 0x0F; 
+1888            
+1889            drawChar7x8ASCII_toDisplay(col, row);
+1890          }*/
+1891          void draw4Pixels(unsigned char fData,unsigned char sData,unsigned char row, unsigned char col){ 
+1892   1        Set_Column_Address(col,col); //
+1893   1        Set_Row_Address(row,row);
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 35  
+
+1894   1        writeRAMCommand();
+1895   1        oled_Data(fData);
+1896   1        oled_Data(sData);
+1897   1      }
+1898          
+1899          void init_5x7_ASCII(unsigned char ch){
+1900   1        Address = getAddress_5x7_ASCII(ch); 
+1901   1        
+1902   1        address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1903   1        address_BYTE2     = (Address & 0x0000FF00)>>8;
+1904   1        address_BYTE3_LSB = (Address & 0x000000FF);
+1905   1        
+1906   1        SFRPAGE = SPI0_PAGE;
+1907   1        SPIEN   = 0;  
+1908   1        SFRPAGE = 0x0F; 
+1909   1        //MF_SO   = 1;      //P3^3 = 1; 
+1910   1        MF_CS2  = 0;  
+1911   1        
+1912   1        sendMF_byte_to_Display(0x0B);
+1913   1        send24bitAddressToDisplay();
+1914   1        sendMF_byte_to_Display(0x00);
+1915   1        
+1916   1        //read_5x7_ASCII_CharFromDisplay(ch); 
+1917   1        
+1918   1        MF_CS2 = 1;
+1919   1        SFRPAGE = SPI0_PAGE;
+1920   1        SPIEN = 1;
+1921   1        SFRPAGE = 0x0F; 
+1922   1      }
+1923          
+1924          void init_8x16_ASCII(unsigned char ch){
+1925   1        Address = getAddress_8x16_ASCII(ch);  
+1926   1        
+1927   1        address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1928   1        address_BYTE2     = (Address & 0x0000FF00)>>8;
+1929   1        address_BYTE3_LSB = (Address & 0x000000FF);
+1930   1        
+1931   1        SFRPAGE = SPI0_PAGE;
+1932   1        SPIEN   = 0;  
+1933   1        SFRPAGE = 0x0F; 
+1934   1        //MF_SO   = 1;      //P3^3 = 1; 
+1935   1        MF_CS2  = 0;  
+1936   1        
+1937   1        sendMF_byte_to_Display(0x0B);
+1938   1        send24bitAddressToDisplay();
+1939   1        sendMF_byte_to_Display(0x00);
+1940   1        
+1941   1        //read_8x16_ASCII_CharFromDisplay(ch);  
+1942   1        
+1943   1        MF_CS2 = 1;
+1944   1        SFRPAGE = SPI0_PAGE;
+1945   1        SPIEN = 1;
+1946   1        SFRPAGE = 0x0F; 
+1947   1      }
+1948          void init_WidthAdjusted_Arial_ASCII(unsigned char ch){
+1949   1        Address = getAddress_WidthAdjusted_Arial_ASCII(ch);
+1950   1        
+1951   1        address_BYTE1_MSB = (Address & 0x00FF0000)>>16;
+1952   1        address_BYTE2     = (Address & 0x0000FF00)>>8;
+1953   1        address_BYTE3_LSB = (Address & 0x000000FF); 
+1954   1        
+1955   1        SFRPAGE = SPI0_PAGE;
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 36  
+
+1956   1        SPIEN   = 0;  
+1957   1        SFRPAGE = 0x0F; 
+1958   1        MF_CS2  = 0;  
+1959   1        
+1960   1        sendMF_byte_to_Display(0x0B);
+1961   1        send24bitAddressToDisplay();
+1962   1        sendMF_byte_to_Display(0x00);
+1963   1        
+1964   1        //read_16x16_Font_CharFromDisplay(ch);
+1965   1        
+1966   1        MF_CS2 = 1;
+1967   1        SFRPAGE = SPI0_PAGE;
+1968   1        SPIEN = 1;
+1969   1        SFRPAGE = 0x0F; 
+1970   1      }
+1971          void init_Alphabet_5x7_ASCII(){
+1972   1        //init_5x7_ASCII('A');
+1973   1        //init_5x7_ASCII('B');
+1974   1        //init_5x7_ASCII('C');
+1975   1        //init_5x7_ASCII('D');
+1976   1        //init_5x7_ASCII('E');
+1977   1        //init_5x7_ASCII('F');
+1978   1        //init_5x7_ASCII('G');
+1979   1        //init_5x7_ASCII('H');
+1980   1        //init_5x7_ASCII('I');
+1981   1        //init_5x7_ASCII('J');
+1982   1        //init_5x7_ASCII('K');
+1983   1        //init_5x7_ASCII('L');
+1984   1        //init_5x7_ASCII('M');
+1985   1        //init_5x7_ASCII('N');
+1986   1        //init_5x7_ASCII('O');
+1987   1        //init_5x7_ASCII('P');
+1988   1        //init_5x7_ASCII('Q');
+1989   1        //init_5x7_ASCII('R');
+1990   1        //init_5x7_ASCII('S');
+1991   1        //init_5x7_ASCII('T');
+1992   1        //init_5x7_ASCII('U');
+1993   1        //init_5x7_ASCII('V');
+1994   1        //init_5x7_ASCII('W');
+1995   1        //init_5x7_ASCII('X');
+1996   1        //init_5x7_ASCII('Y');
+1997   1        //init_5x7_ASCII('Z');
+1998   1        //init_5x7_ASCII('<');
+1999   1        //init_5x7_ASCII('>');
+2000   1        //init_5x7_ASCII('\"');
+2001   1        //init_5x7_ASCII(',');
+2002   1      }
+2003          void init_Alphabet_8x16_ASCII(){
+2004   1        //init_8x16_ASCII('A');
+2005   1        //init_8x16_ASCII('B');
+2006   1        //init_8x16_ASCII('C');
+2007   1        //init_8x16_ASCII('D');
+2008   1        //init_8x16_ASCII('E');
+2009   1        //init_8x16_ASCII('F');
+2010   1        //init_8x16_ASCII('G');
+2011   1        //init_8x16_ASCII('H');
+2012   1        //init_8x16_ASCII('I');
+2013   1        //init_8x16_ASCII('J');
+2014   1        //init_8x16_ASCII('K');
+2015   1        //init_8x16_ASCII('L');
+2016   1        //init_8x16_ASCII('M');
+2017   1        //init_8x16_ASCII('N');
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 37  
+
+2018   1        //init_8x16_ASCII('O');
+2019   1        //init_8x16_ASCII('P');
+2020   1        //init_8x16_ASCII('Q');
+2021   1        //init_8x16_ASCII('R');
+2022   1        //init_8x16_ASCII('S');
+2023   1        //init_8x16_ASCII('T');
+2024   1        //init_8x16_ASCII('U');
+2025   1        //init_8x16_ASCII('V');
+2026   1        //init_8x16_ASCII('W');
+2027   1        //init_8x16_ASCII('X');
+2028   1        //init_8x16_ASCII('Y');
+2029   1        //init_8x16_ASCII('Z');
+2030   1        //init_8x16_ASCII('a');
+2031   1        //init_8x16_ASCII('b');
+2032   1        //init_8x16_ASCII('c');
+2033   1        //init_8x16_ASCII('d');
+2034   1        //init_8x16_ASCII('e');
+2035   1        //init_8x16_ASCII('f');
+2036   1        //init_8x16_ASCII('g');
+2037   1        //init_8x16_ASCII('h');
+2038   1        //init_8x16_ASCII('i');
+2039   1        //init_8x16_ASCII('j');
+2040   1        //init_8x16_ASCII('k');
+2041   1        //init_8x16_ASCII('l');
+2042   1        //init_8x16_ASCII('m');
+2043   1        //init_8x16_ASCII('n');
+2044   1        //init_8x16_ASCII('o');
+2045   1        //init_8x16_ASCII('p');
+2046   1        //init_8x16_ASCII('q');
+2047   1        //init_8x16_ASCII('r');
+2048   1        //init_8x16_ASCII('s');
+2049   1        //init_8x16_ASCII('t');
+2050   1        //init_8x16_ASCII('u');
+2051   1        //init_8x16_ASCII('v');
+2052   1        //init_8x16_ASCII('w');
+2053   1        //init_8x16_ASCII('x');
+2054   1        //init_8x16_ASCII('y');
+2055   1        //init_8x16_ASCII('z');
+2056   1        //init_8x16_ASCII('0');
+2057   1        //init_8x16_ASCII('1');
+2058   1        //init_8x16_ASCII('2');
+2059   1        //init_8x16_ASCII('3');
+2060   1        //init_8x16_ASCII('4');
+2061   1        //init_8x16_ASCII('5');
+2062   1        //init_8x16_ASCII('6');
+2063   1        //init_8x16_ASCII('7');
+2064   1        //init_8x16_ASCII('8');
+2065   1        //init_8x16_ASCII('9');
+2066   1        //init_8x16_ASCII(',');
+2067   1        //init_8x16_ASCII('.');
+2068   1        //init_8x16_ASCII(':');
+2069   1        //init_8x16_ASCII('-');
+2070   1        //init_8x16_ASCII('=');
+2071   1        //init_8x16_ASCII('+');
+2072   1        //init_8x16_ASCII('(');
+2073   1        //init_8x16_ASCII(')');
+2074   1        //init_8x16_ASCII('/');
+2075   1        //init_8x16_ASCII('%');
+2076   1      }
+2077          void init_Alphabet_WidthAdjusted_Arial_ASCII(){
+2078   1        //init_WidthAdjusted_Arial_ASCII('A');
+2079   1        //init_WidthAdjusted_Arial_ASCII('B');
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 38  
+
+2080   1        //init_WidthAdjusted_Arial_ASCII('C');
+2081   1        //init_WidthAdjusted_Arial_ASCII('D');
+2082   1        //init_WidthAdjusted_Arial_ASCII('E');
+2083   1        //init_WidthAdjusted_Arial_ASCII('F');
+2084   1        //init_WidthAdjusted_Arial_ASCII('G');
+2085   1        //init_WidthAdjusted_Arial_ASCII('H');
+2086   1        //init_WidthAdjusted_Arial_ASCII('I');
+2087   1        //init_WidthAdjusted_Arial_ASCII('J');
+2088   1        //init_WidthAdjusted_Arial_ASCII('K');
+2089   1        //init_WidthAdjusted_Arial_ASCII('L');
+2090   1        //init_WidthAdjusted_Arial_ASCII('M');
+2091   1        //init_WidthAdjusted_Arial_ASCII('N');
+2092   1        //init_WidthAdjusted_Arial_ASCII('O');
+2093   1        //init_WidthAdjusted_Arial_ASCII('P');
+2094   1        //init_WidthAdjusted_Arial_ASCII('Q');
+2095   1        //init_WidthAdjusted_Arial_ASCII('R');
+2096   1        //init_WidthAdjusted_Arial_ASCII('S');
+2097   1        //init_WidthAdjusted_Arial_ASCII('T');
+2098   1        //init_WidthAdjusted_Arial_ASCII('U');
+2099   1        //init_WidthAdjusted_Arial_ASCII('V');
+2100   1        //init_WidthAdjusted_Arial_ASCII('W');
+2101   1        //init_WidthAdjusted_Arial_ASCII('X');
+2102   1        //init_WidthAdjusted_Arial_ASCII('Y');  
+2103   1        //init_WidthAdjusted_Arial_ASCII('Z');
+2104   1        //init_WidthAdjusted_Arial_ASCII('a');
+2105   1        //init_WidthAdjusted_Arial_ASCII('b');
+2106   1        //init_WidthAdjusted_Arial_ASCII('c');
+2107   1        //init_WidthAdjusted_Arial_ASCII('d');
+2108   1        //init_WidthAdjusted_Arial_ASCII('e');
+2109   1        //init_WidthAdjusted_Arial_ASCII('f');
+2110   1        //init_WidthAdjusted_Arial_ASCII('g');
+2111   1        //init_WidthAdjusted_Arial_ASCII('h');
+2112   1        //init_WidthAdjusted_Arial_ASCII('i');
+2113   1        //init_WidthAdjusted_Arial_ASCII('j');
+2114   1        //init_WidthAdjusted_Arial_ASCII('k');
+2115   1        //init_WidthAdjusted_Arial_ASCII('l');
+2116   1        //init_WidthAdjusted_Arial_ASCII('m');
+2117   1        //init_WidthAdjusted_Arial_ASCII('n');
+2118   1        //init_WidthAdjusted_Arial_ASCII('o');
+2119   1        //init_WidthAdjusted_Arial_ASCII('p');
+2120   1        //init_WidthAdjusted_Arial_ASCII('q');
+2121   1        //init_WidthAdjusted_Arial_ASCII('r');
+2122   1        //init_WidthAdjusted_Arial_ASCII('s');
+2123   1        //init_WidthAdjusted_Arial_ASCII('t');
+2124   1        //init_WidthAdjusted_Arial_ASCII('u');
+2125   1        //init_WidthAdjusted_Arial_ASCII('v');
+2126   1        //init_WidthAdjusted_Arial_ASCII('w');
+2127   1        //init_WidthAdjusted_Arial_ASCII('x');
+2128   1        //init_WidthAdjusted_Arial_ASCII('y');
+2129   1        //init_WidthAdjusted_Arial_ASCII('z');
+2130   1        //init_WidthAdjusted_Arial_ASCII('0');
+2131   1        //init_WidthAdjusted_Arial_ASCII('1');
+2132   1        //init_WidthAdjusted_Arial_ASCII('2');
+2133   1        //init_WidthAdjusted_Arial_ASCII('3');
+2134   1        //init_WidthAdjusted_Arial_ASCII('4');
+2135   1        //init_WidthAdjusted_Arial_ASCII('5');
+2136   1        //init_WidthAdjusted_Arial_ASCII('6');
+2137   1        //init_WidthAdjusted_Arial_ASCII('7');
+2138   1        //init_WidthAdjusted_Arial_ASCII('8');
+2139   1        //init_WidthAdjusted_Arial_ASCII('9');
+2140   1        //init_WidthAdjusted_Arial_ASCII(',');
+2141   1        //init_WidthAdjusted_Arial_ASCII('.');  
+C51 COMPILER V9.56.0.0   FONTDISPLAY                                                       06/03/2021 14:52:33 PAGE 39  
+
+2142   1      }
+2143          
+2144          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   8530    ----
+   CONSTANT SIZE    =   3626    ----
+   XDATA SIZE       =    119    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      41
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

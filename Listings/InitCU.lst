@@ -1,0 +1,83 @@
+C51 COMPILER V9.56.0.0   INITCU                                                            06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE INITCU
+OBJECT MODULE PLACED IN .\Objects\InitCU.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE InitCU.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\
+                    -Listings\InitCU.lst) TABS(2) OBJECT(.\Objects\InitCU.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          #include <Timer0.h>
+   3          #include <Timer1.h>
+   4          #include <Timer2.h>
+   5          #include <Timer3.h>
+   6          #include <Timer4.h>
+   7          #include <UART0.h>
+   8          
+   9          sbit MF_SO   = P3^3;
+  10          sbit T0      = P3^4;
+  11          sbit T1      = P3^5;
+  12          
+  13          void WDT_Disabled(){
+  14   1        EA = 0;//Disable All interupt //SFRPAGE = All pages;
+  15   1        WDTCN = 0xDE;                 //SFRPAGE = All pages;
+  16   1        WDTCN = 0xAD;                 //SFRPAGE = All pages;
+  17   1        EA = 1;//Enable All interupt  //SFRPAGE = All pages;
+  18   1      }
+  19          void Ports_Init(){
+  20   1        SFRPAGE = 0x0F; 
+  21   1        P0MDOUT = 0xF5;   //Push-pull out UART0_TX0(P0_0) SPI_SCK(P0_2) SPI_MOSI(P0_4)
+  22   1        P1MDOUT = 0xFF;   //D/C, /CS, /RES  and diod P1.6
+  23   1        P3MDOUT = 0xF7;   /*P3^4, P3^5 sound T0, T1*/
+  24   1        P4MDOUT = 0xFF;   /*D0-D7*/  //SFRPAGE = 0x0F;
+  25   1        P5MDOUT = 0xFF;   /*A8-A15*/ //SFRPAGE = 0x0F;
+  26   1        P6MDOUT = 0xF0;   /*P0-P3 inputs*/ /*P4-P7 oututs*/ //SFRPAGE = 0x0F;
+  27   1        P6 = 0xFF;        /*P0-P3 inputs*/                  //SFRPAGE = 0x0F;
+  28   1        XBR0    = 0x06;   //allow  UART0, SPI
+  29   1        XBR1    = 0x80;   //SYSCLK P1.7 enable
+  30   1        XBR2    = 0x40;
+  31   1        MF_SO   = 1;      //P3^3 = 1; 
+  32   1        T0 = 1;
+  33   1        T1 = 1;
+  34   1      }
+  35          void SYSCLK_Init(){
+  36   1        SFRPAGE = 0x0F; 
+  37   1        OSCICN = 0xC3;          // Select internal generator. Enabled frequency chek SYSCLK 
+  38   1      }
+  39          void SPI_Init(){
+  40   1        SFRPAGE = SPI0_PAGE;  
+  41   1        SPI0CFG = 0x40;
+  42   1        SPI0CKR = 0x00 ; //Max Freq SPI
+  43   1        SPI0CN  = 0x01; //SPI enable    
+  44   1      }
+  45          
+  46          void initCPU(){
+  47   1        WDT_Disabled(); 
+  48   1        Ports_Init(); 
+  49   1        SYSCLK_Init();
+  50   1        SPI_Init();
+  51   1        UART0_Init(); 
+  52   1        Timer0_Init();
+  53   1        Timer1_Init();
+  54   1        Timer2_Init();
+C51 COMPILER V9.56.0.0   INITCU                                                            06/03/2021 14:52:32 PAGE 2   
+
+  55   1        Timer3_Init();
+  56   1        Timer4_Init();  
+  57   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    100    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

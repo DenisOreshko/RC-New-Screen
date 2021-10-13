@@ -1,0 +1,21 @@
+".\Objects\main.obj",
+".\Objects\InitCU.obj",
+".\Objects\Timer0.obj",
+".\Objects\Timer1.obj",
+".\Objects\Timer2.obj",
+".\Objects\Timer3.obj",
+".\Objects\Timer4.obj",
+".\Objects\Display.obj",
+".\Objects\Delays.obj",
+".\Objects\Buttons.obj",
+".\Objects\DeviceParameters.obj",
+".\Objects\Menu.obj",
+".\Objects\FontDisplay.obj",
+".\Objects\BigFont.obj",
+".\Objects\MiddleFont.obj",
+".\Objects\Indication.obj",
+".\Objects\SFRPage.obj",
+".\Objects\Sound.obj",
+".\Objects\UART0.obj" 
+TO ".\Objects\third_ver" 
+PRINT(".\Listings\third_ver.m51") RAMSIZE(256) 

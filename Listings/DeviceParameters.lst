@@ -1,0 +1,462 @@
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE DEVICEPARAMETERS
+OBJECT MODULE PLACED IN .\Objects\DeviceParameters.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE DeviceParameters.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
+                    -D PRINT(.\Listings\DeviceParameters.lst) TABS(2) OBJECT(.\Objects\DeviceParameters.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          #include <Menu.h>
+   3          #include <Delays.h>
+   4          #include <UART0.h>
+   5          #include <string.h>
+   6          #include <FontDisplay.h>
+   7          #include <stdlib.h>
+   8          #include <MiddleFont.h>
+   9          
+  10          void updateLampFreqMax();
+  11          //State Device Parameters
+  12          xdata unsigned char NAME;
+  13          xdata unsigned char CODE_ERROR;
+  14          xdata unsigned char COUNT_ERROR;
+  15          xdata unsigned char LAMP_OPTION;
+  16          xdata unsigned char QSW_OPTION;
+  17          xdata unsigned char LAMP_STATE;
+  18          xdata unsigned char QSW1_STATE;
+  19          xdata unsigned char QSW2_STATE;
+  20          xdata unsigned char CS_STATE;
+  21          xdata unsigned char SHUTTER1_STATE;
+  22          xdata unsigned char SHUTTER2_STATE;
+  23          xdata unsigned char PILOT;
+  24          xdata unsigned char STATE1;
+  25          xdata unsigned char STATE2;
+  26          xdata unsigned char STATE3;
+  27          xdata unsigned char STATE4;
+  28          xdata unsigned char VERS;
+  29          xdata unsigned char STT[16] = {0};
+  30          xdata unsigned char PS_SERIAL_NUMBER;
+  31          xdata unsigned char REQUIRED_PLD;
+  32          xdata unsigned char CURRENT_PLD;
+  33          
+  34          //Model Parameters
+  35          xdata unsigned short int ID;
+  36          xdata unsigned char SETUP;
+  37          xdata unsigned char LASER;
+  38          xdata unsigned short int CAP;
+  39          xdata unsigned short int UCMAX;
+  40          xdata unsigned short int EMIN;
+  41          xdata unsigned short int EMAX;
+  42          xdata unsigned short int EDEF;
+  43          xdata unsigned short int FMIN;
+  44          xdata unsigned short int FMAX;
+  45          xdata unsigned short int FDEF;
+  46          xdata unsigned short int PMIN;
+  47          xdata unsigned short int PMAX;
+  48          xdata unsigned short int PDEF;
+  49          xdata unsigned short int RMAX1;
+  50          xdata unsigned short int RMAX2;
+  51          xdata unsigned short int PAUSE;
+  52          
+  53          //Main Parameters
+  54          xdata unsigned int ENERGY;
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 2   
+
+  55          xdata unsigned short int RADIATION1;
+  56          xdata unsigned short int RADIATION2;
+  57          xdata unsigned long int DELAY1;
+  58          xdata unsigned long int DELAY2;
+  59          xdata unsigned long int DELAY3;
+  60          xdata unsigned long int DELAY1_MIN;
+  61          xdata unsigned long int DELAY2_MIN;
+  62          xdata unsigned long int DELAY3_MIN;
+  63          xdata unsigned long int DELAY1_MAX;
+  64          xdata unsigned long int DELAY2_MAX;
+  65          xdata unsigned long int DELAY3_MAX;
+  66          xdata unsigned short int LAMP_FREQUENCY;
+  67          xdata unsigned short int LAMP_FREQ_MIN;
+  68          xdata unsigned short int LAMP_FREQ_MAX;
+  69          xdata unsigned short int LAMP_TRG_MIN;
+  70          xdata unsigned short int LAMP_TRG_MAX;
+  71          xdata unsigned short int QSW_FREQUENCY;
+  72          xdata unsigned short int QSW_SELECTING;
+  73          xdata unsigned short int QSW_F01;
+  74          xdata unsigned short int QSW_S01;
+  75          xdata unsigned short int QSW_SHOTS;
+  76          xdata unsigned char EXPONENT;
+  77          xdata unsigned char SIMMER_TIME;
+  78          xdata unsigned long int FLASH_NUMBER;
+  79          xdata unsigned long int OPERATION_TIME;
+  80          xdata unsigned char DAC2;
+  81          xdata unsigned char DAC2_MAX;
+  82          
+  83          //PS_PAR
+  84          xdata unsigned short int SET_VOLTAGE;
+  85          xdata unsigned short int SET_VOLTAGE_MIN;
+  86          xdata unsigned short int SET_VOLTAGE_MAX;
+  87          xdata unsigned short int CAPACITANCE;
+  88          xdata unsigned short int CAPACITOR_V;
+  89          xdata unsigned short int LAMP_V;
+  90          xdata unsigned short int U_PERCENT;
+  91          
+  92          //CS_MAIN_PAR
+  93          xdata unsigned char CS_FLOW;
+  94          xdata unsigned char CS_T_WATER;
+  95          xdata unsigned char CS_T_AIR;
+  96          xdata unsigned char CS_T_WORK;
+  97          xdata unsigned char CS_T_READY;
+  98          xdata unsigned char CS_T_MAX;
+  99          xdata unsigned char CS_FLOW_MIN;
+ 100          xdata unsigned char CS_HEATER_CUR;
+ 101          xdata unsigned char CS_HEATER_MIN;
+ 102          
+ 103          //SERVICE_PAR
+ 104          xdata unsigned short int DELAY_RAD1;
+ 105          xdata unsigned short int DELAY_RAD1_MIN;
+ 106          xdata unsigned short int DELAY_RAD1_MAX;
+ 107          xdata unsigned short int DELAY_RAD2;
+ 108          xdata unsigned short int DELAY_RAD2_MIN;
+ 109          xdata unsigned short int DELAY_RAD2_MAX;
+ 110          xdata unsigned short int ENERGY_MAX;
+ 111          xdata unsigned short int ENERGY_RAD1_MAX;
+ 112          xdata unsigned short int ENERGY_RAD2_MAX;
+ 113          xdata unsigned short int PULS_LONGNESS;
+ 114          xdata unsigned short int PULS_LONG_MIN;
+ 115          xdata unsigned short int PULS_LONG_MAX;
+ 116          xdata unsigned short int AVR_RAD;
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 3   
+
+ 117          xdata unsigned short int AVR_UFB;
+ 118          xdata unsigned char DEBUG;
+ 119          xdata unsigned char HOST_APPEARANCE;
+ 120          xdata unsigned char HOST_USE;
+ 121          xdata unsigned char U_DEMO;
+ 122          xdata unsigned char U_DEMO2;
+ 123          xdata unsigned short int FLASH_MAX;
+ 124          xdata unsigned short int OPERATION_MAX;
+ 125          xdata unsigned short int UFB_SCALE;
+ 126          xdata unsigned short int RAD_SCALE;
+ 127          
+ 128          //CS_SERVICE_PAR
+ 129          xdata unsigned char CS_GAIN;
+ 130          xdata unsigned char CS_TD;
+ 131          xdata unsigned char CS_TI;
+ 132          xdata unsigned char CS_HEATER;
+ 133          xdata unsigned char CS_T_BIAS;
+ 134          xdata unsigned char CS_TRDY_BIAS;
+ 135          xdata unsigned char CS_OPTION;
+ 136          
+ 137          //RC parameters
+ 138          xdata unsigned short int RC_SOFT_VERSION = 100;
+ 139          xdata unsigned short int MESSAGE_SOUND_MODE = 3;
+ 140          xdata unsigned short int temp_MESSAGE_SOUND_MODE = 0;
+ 141          xdata unsigned short int BUTTON_SOUND_MODE = 3;
+ 142          xdata unsigned short int temp_BUTTON_SOUND_MODE = 0;
+ 143          xdata unsigned short int DISPLAY_MODE = 2;
+ 144          xdata unsigned short int temp_DISPLAY_MODE = 0;
+ 145          xdata unsigned short int ERROR_DISPLAY_MODE = 2;
+ 146          xdata unsigned short int temp_ERROR_DISPLAY_MODE = 0;
+ 147          
+ 148          //temp parameters
+ 149          xdata unsigned int temp_ENERGY = 0;
+ 150          xdata unsigned short int temp_ENERGY_MAX = 0;
+ 151          xdata unsigned short int temp_ENERGY_RAD1_MAX = 0;
+ 152          xdata unsigned short int temp_ENERGY_RAD2_MAX = 0;
+ 153          xdata unsigned short int temp_RADIATION1 = 0;
+ 154          xdata unsigned short int temp_RADIATION2 = 0;
+ 155          xdata unsigned short int temp_LAMP_FREQUENCY = 0;
+ 156          xdata unsigned short int temp_LAMP_FREQ_MAX = 0;
+ 157          xdata unsigned long int temp_DELAY1 = 0;
+ 158          xdata unsigned long int temp_DELAY2 = 0;
+ 159          xdata unsigned long int temp_OPERATION_TIME = 0;
+ 160          xdata unsigned long int temp_FLASH_NUMBER = 0;
+ 161          xdata unsigned short int temp_QSW_SHOTS = 0;
+ 162          xdata unsigned char output_prr_arr[20];
+ 163          xdata int index_prr;
+ 164          xdata int max_index_prr;
+ 165          xdata unsigned char tmp_string_ENERGY[4] = {0};
+ 166          xdata unsigned char tmp_string_LAMP_FREQUENCY[4] = {0};
+ 167          xdata unsigned char tmp_string_LAMP_FREQ_MAX[4] = {0};
+ 168          xdata unsigned short int str = 0, lng = 0;
+ 169          
+ 170          void calcOutputPrrKoefficients(){
+ 171   1        int i;  
+ 172   1        unsigned char tmpLF = LAMP_FREQUENCY * 10;
+ 173   1        index_prr = 0;
+ 174   1        output_prr_arr[20] = 0;
+ 175   1        for(i = 0; i < 20; i++)
+ 176   1          output_prr_arr[i] = 0;
+ 177   1        for(i = tmpLF; i > 0;i--){
+ 178   2          if(tmpLF%i == 0){
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 4   
+
+ 179   3              if(tmpLF/i > 10){
+ 180   4                if((tmpLF/i)%10 == 0){
+ 181   5                  output_prr_arr[index_prr] = tmpLF/i;
+ 182   5                  max_index_prr = index_prr;  
+ 183   5                  index_prr++;
+ 184   5                }
+ 185   4              }else{
+ 186   4                output_prr_arr[index_prr] = tmpLF/i;
+ 187   4                max_index_prr = index_prr;  
+ 188   4                index_prr++;
+ 189   4              } 
+ 190   3          }
+ 191   2        }   
+ 192   1      }
+ 193          
+ 194          void loadParameters(){
+ 195   1        CODE_ERROR = 0x1E;
+ 196   1        ENERGY = 60;
+ 197   1        RADIATION1 = 24;
+ 198   1        RADIATION2 = 435;
+ 199   1        SIMMER_TIME = 60; 
+ 200   1        DELAY1 = 150000;
+ 201   1        DELAY2 = 150000;
+ 202   1        DELAY1_MIN = 40000;
+ 203   1        DELAY2_MIN = 40000;
+ 204   1        DELAY1_MAX = 240000;
+ 205   1        DELAY2_MAX = 240000;
+ 206   1        EMIN = 50;
+ 207   1        EMAX = 700;
+ 208   1        ENERGY_MAX = 600;
+ 209   1        ENERGY_RAD1_MAX = 900;
+ 210   1        RMAX1 = 900;
+ 211   1        ENERGY_RAD2_MAX = 900;
+ 212   1        LAMP_STATE = 0x30;
+ 213   1        SHUTTER1_STATE = 0x30;
+ 214   1        QSW1_STATE = 0x30;
+ 215   1        LAMP_OPTION = 0x01;
+ 216   1        QSW_OPTION = 0x01;
+ 217   1        LAMP_FREQUENCY = 10;
+ 218   1        LAMP_FREQ_MIN = 1;
+ 219   1        LAMP_FREQ_MAX = 10;
+ 220   1        FMIN = 1;
+ 221   1        FMAX = 20;
+ 222   1        QSW_F01 = LAMP_FREQUENCY*10;
+ 223   1        QSW_S01 = 1;
+ 224   1        QSW_SHOTS = 1;    
+ 225   1        OPERATION_TIME = 110125;//maximum number 4294967295
+ 226   1        FLASH_NUMBER = 20545;  //maximum number 4294967295
+ 227   1        CAPACITOR_V = 1015;
+ 228   1        SET_VOLTAGE = 258;
+ 229   1        U_PERCENT = 5;
+ 230   1        PULS_LONGNESS = 200;
+ 231   1        PULS_LONG_MIN = 150;
+ 232   1        PULS_LONG_MAX = 16000;  
+ 233   1        updateLampFreqMax();
+ 234   1      }
+ 235          
+ 236          void updateEnergy(){  
+ 237   1        ib = 0;
+ 238   1        lng = 0;
+ 239   1        str = 0;
+ 240   1        memset(buffer,0,128);
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 5   
+
+ 241   1        memset(tmp_string_ENERGY,0,4);
+ 242   1        SFRPAGE = 0x0F;
+ 243   1        UART0_sendData("energy ?",8);
+ 244   1        UART0_TX_sendByte(0x0D);
+ 245   1        SFRPAGE = 0x0F;
+ 246   1        delay35mS();
+ 247   1        
+ 248   1        while(*(buffer+str) != '='){
+ 249   2          str++;
+ 250   2        }
+ 251   1        
+ 252   1        while(*(buffer+str+lng) != ';'){
+ 253   2          lng++;
+ 254   2        }
+ 255   1        
+ 256   1        memcpy(tmp_string_ENERGY, &buffer[str+1], sizeof(char) * lng-1);
+ 257   1        //memcpy(tmp_string_ENERGY, &buffer[17], sizeof(char) * lng-1);
+ 258   1        //write_8x16ASCII_String(tmp_string_ENERGY, 20, 0x3A, 0x30, 0x0F);
+ 259   1        if(buffer[16] == '='){
+ 260   2          memcpy(tmp_string_ENERGY, &buffer[str+1], sizeof(char) * lng-1);
+ 261   2          ENERGY = atoi(tmp_string_ENERGY); 
+ 262   2        }
+ 263   1      }
+ 264          void updateRadiation1(){  
+ 265   1      
+ 266   1      }
+ 267          void updateRadiation2(){  
+ 268   1      
+ 269   1      }
+ 270          void updateQsw_f01(){
+ 271   1      
+ 272   1      }
+ 273          void updateDelay1(){  
+ 274   1      
+ 275   1      }
+ 276          void updateDelay2(){  
+ 277   1      
+ 278   1      }
+ 279          void updateSimmerOff(){ 
+ 280   1      
+ 281   1      }
+ 282          void updateLampFrequency(){ 
+ 283   1        ib = 0;
+ 284   1        lng = 0;
+ 285   1        str = 0;
+ 286   1        memset(buffer,0,128);
+ 287   1        memset(tmp_string_LAMP_FREQUENCY,0,4);
+ 288   1        SFRPAGE = 0x0F;
+ 289   1        UART0_sendData("LAMP_FREQUENCY ?",16);
+ 290   1        UART0_TX_sendByte(0x0D);
+ 291   1        SFRPAGE = 0x0F;
+ 292   1        delay1mS();
+ 293   1        
+ 294   1        while(*(buffer+str) != '='){
+ 295   2          str++;
+ 296   2        }
+ 297   1        while(*(buffer+str+lng) != ';'){
+ 298   2          lng++;
+ 299   2        }
+ 300   1        memcpy(tmp_string_LAMP_FREQUENCY, &buffer[str+1], sizeof(char) * lng-1);
+ 301   1        LAMP_FREQUENCY = atoi(tmp_string_LAMP_FREQUENCY);
+ 302   1      }
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 6   
+
+ 303          void updateOperation_Time(){
+ 304   1        
+ 305   1      }
+ 306          void updateFlash_Number(){
+ 307   1        
+ 308   1      }
+ 309          void updateLampEnergyMax(){ 
+ 310   1      
+ 311   1      }
+ 312          
+ 313          void updateLampFreqMax(){ 
+ 314   1        ib = 0;
+ 315   1        lng = 0;
+ 316   1        str = 0;
+ 317   1        memset(buffer,0,128);
+ 318   1        memset(tmp_string_LAMP_FREQ_MAX,0,4);
+ 319   1        SFRPAGE = 0x0F;
+ 320   1        UART0_sendData("LAMP_FREQ_MAX ?",16);
+ 321   1        UART0_TX_sendByte(0x0D);
+ 322   1        SFRPAGE = 0x0F;
+ 323   1        delay1mS();
+ 324   1        
+ 325   1        while(*(buffer+str) != '='){
+ 326   2          str++;
+ 327   2        }
+ 328   1        while(*(buffer+str+lng) != ';'){
+ 329   2          lng++;
+ 330   2        }
+ 331   1        memcpy(tmp_string_LAMP_FREQ_MAX, &buffer[str+1], sizeof(char) * lng-1);
+ 332   1        LAMP_FREQ_MAX = atoi(tmp_string_LAMP_FREQ_MAX);
+ 333   1      
+ 334   1      }
+ 335          void updateEnergyRadiation1Max(){ 
+ 336   1      
+ 337   1      }
+ 338          void updateQSW_SHOTS(){ 
+ 339   1      
+ 340   1      }
+ 341          void update_CAPACITOR_V(){  
+ 342   1      
+ 343   1      }
+ 344          void update_SET_VOLTAGE(){  
+ 345   1      
+ 346   1      }
+ 347          void update_U_PERCENT(){  
+ 348   1      
+ 349   1      }
+ 350          void update_PULS_LONGNESS(){  
+ 351   1      
+ 352   1      }
+ 353          
+ 354          void updateSTT(){
+ 355   1        ib = 0;
+ 356   1        memset(buffer,0,128);
+ 357   1        SFRPAGE = 0x0F;
+ 358   1        UART0_sendData("STT ?",5);
+ 359   1        UART0_TX_sendByte(0x0D);
+ 360   1        SFRPAGE = 0x0F;
+ 361   1        delay35mS();
+ 362   1        memcpy(STT, &buffer[12], sizeof(char) * 16);
+ 363   1        //write_8x16ASCII_String(STT,           16, 0x3A, 0x30, 0x0F);  
+ 364   1        LAMP_STATE = (STT[15])&0x03;
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 7   
+
+ 365   1        LAMP_OPTION =(STT[14])&0x03;
+ 366   1        QSW1_STATE = (STT[13])&0x01;
+ 367   1        QSW2_STATE = (STT[13]>>1)&0x01;
+ 368   1        SHUTTER1_STATE = (STT[13]>>2)&0x01;
+ 369   1        SHUTTER2_STATE = (STT[13]>>3)&0x01;
+ 370   1        QSW_OPTION = (STT[12])&0x07;
+ 371   1        
+ 372   1        CODE_ERROR = STT[11];
+ 373   1        COUNT_ERROR = STT[9];
+ 374   1        
+ 375   1        put_8x16ASCII_CharOnDisplay(LAMP_STATE, 0x3A, 0x30, 0x0F);
+ 376   1        put_8x16ASCII_CharOnDisplay(LAMP_OPTION, 0x3C, 0x30, 0x0F);
+ 377   1        put_8x16ASCII_CharOnDisplay(QSW1_STATE, 0x3E, 0x30, 0x0F);
+ 378   1        put_8x16ASCII_CharOnDisplay(QSW2_STATE, 0x40, 0x30, 0x0F);
+ 379   1        put_8x16ASCII_CharOnDisplay(SHUTTER1_STATE, 0x42, 0x30, 0x0F);
+ 380   1        put_8x16ASCII_CharOnDisplay(SHUTTER2_STATE, 0x44, 0x30, 0x0F);
+ 381   1        put_8x16ASCII_CharOnDisplay(QSW_OPTION, 0x46, 0x30, 0x0F);
+ 382   1        put_8x16ASCII_CharOnDisplay(CODE_ERROR, 0x4A, 0x30, 0x0F);
+ 383   1        put_8x16ASCII_CharOnDisplay(COUNT_ERROR, 0x4E, 0x30, 0x0F);
+ 384   1        //write_8x16ASCII_String(LAMP_STATE,           1, 0x3A, 0x30, 0x0F);/*
+ 385   1        //write_8x16ASCII_String(LAMP_OPTION,          1, 0x3C, 0x30, 0x0F);
+ 386   1        //write_8x16ASCII_String(QSW_OPTION,           1, 0x3E, 0x30, 0x0F);*/  
+ 387   1      }
+ 388          
+ 389          void updateParameters(){
+ 390   1        
+ 391   1        updateSTT();
+ 392   1        switch(INDEX_MENU){
+ 393   2          case 10:updateEnergy();break;
+ 394   2          case 11:updateEnergy();break;
+ 395   2          case 12:updateRadiation1();break;
+ 396   2          case 13:updateRadiation2();break;
+ 397   2          case 20:updateLampFrequency();break;
+ 398   2          case 21:updateLampFrequency();break;
+ 399   2          case 22:updateQsw_f01();break;
+ 400   2          case 23:updateQSW_SHOTS();break;
+ 401   2          case 24:updateDelay1();break;
+ 402   2          case 25:updateDelay2();break;
+ 403   2          case 26:updateSimmerOff();break;
+ 404   2          case 42:updateOperation_Time();
+ 405   2                  updateFlash_Number();
+ 406   2                  break;
+ 407   2          case 421:updateOperation_Time();
+ 408   2                  updateFlash_Number();
+ 409   2                  break;
+ 410   2          case 422:updateOperation_Time();
+ 411   2                  updateFlash_Number();
+ 412   2                  break;
+ 413   2          case 43:updateLampEnergyMax();break;
+ 414   2          case 44:updateLampFreqMax();break;
+ 415   2          case 45:updateEnergyRadiation1Max();break;
+ 416   2          case 60:update_CAPACITOR_V();
+ 417   2                  update_SET_VOLTAGE();
+ 418   2                  break;
+ 419   2          case 61:update_U_PERCENT();
+ 420   2                  update_PULS_LONGNESS();
+ 421   2                  break;
+ 422   2          default:break;
+ 423   2        } 
+ 424   1      }
+
+
+C51 COMPILER V9.56.0.0   DEVICEPARAMETERS                                                  06/03/2021 14:52:32 PAGE 8   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1691    ----
+   CONSTANT SIZE    =     48    ----
+   XDATA SIZE       =    305    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

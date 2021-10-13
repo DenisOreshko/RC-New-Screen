@@ -1,0 +1,287 @@
+C51 COMPILER V9.56.0.0   DISPLAY                                                           06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE DISPLAY
+OBJECT MODULE PLACED IN .\Objects\Display.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE Display.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.
+                    -\Listings\Display.lst) TABS(2) OBJECT(.\Objects\Display.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          #include <Delays.h>
+   3          
+   4          sbit SPI_SCK =  P0^2;// Serial Clock (output)              //SFRPAGE = All pages
+   5          sbit MISO = P0^3;                                          //SFRPAGE = All pages
+   6          sbit MOSI = P0^4;                                          //SFRPAGE = All pages
+   7          sbit SPI_NSS = P0^5;// Slave Select (output to chip select)//SFRPAGE = All pages
+   8          sbit DC = P1^0;                                            //SFRPAGE = All pages
+   9          sbit CS = P1^1;                                            //SFRPAGE = All pages
+  10          sbit RES = P1^2;                                           //SFRPAGE = All pages
+  11          
+  12          xdata unsigned int k,m;
+  13          
+  14          void oled_Command(char command_spi){
+  15   1        SFRPAGE = 0x0F;
+  16   1        DC = 0;       
+  17   1        CS = 1;
+  18   1        CS = 0;     
+  19   1        SFRPAGE = SPI0_PAGE;
+  20   1        SPI0DAT = command_spi;
+  21   1        SPIF = 0;   
+  22   1      }
+  23          
+  24          void oled_Data(char data_spi){
+  25   1        SFRPAGE = 0x0F;
+  26   1        DC = 1;
+  27   1        CS = 1; 
+  28   1        CS = 0;     
+  29   1        SFRPAGE = SPI0_PAGE;
+  30   1        SPI0DAT = data_spi;
+  31   1        SPIF = 0; 
+  32   1      }
+  33          
+  34          void Set_Command_Lock(unsigned char d)
+  35          {
+  36   1        oled_Command(0xFD);     // Set Command Lock
+  37   1        oled_Data(d);       // 0x12 = Unlock Basic Commands; 0x16 = lock
+  38   1      }
+  39          void Set_Display_Mode(unsigned char d)
+  40          {
+  41   1        oled_Command(d);
+  42   1      }
+  43          
+  44          void Set_Font_Clock_Divider(unsigned char d)
+  45          {
+  46   1        oled_Command(0xB3); // Set Display Clock Divider / Oscillator Frequency
+  47   1        oled_Data(d);       // Default => 0xD0
+  48   1                            // A[3:0] => Display Clock Divider
+  49   1                            // A[7:4] => Oscillator Frequency
+  50   1      }
+  51          void Set_MUX_Ratio(unsigned char d)
+  52          {
+  53   1        oled_Command(0xCA);     // Set Multiplex Ratio
+  54   1        oled_Data(d);           //   Default => 0x7F (1/128 Duty)
+C51 COMPILER V9.56.0.0   DISPLAY                                                           06/03/2021 14:52:32 PAGE 2   
+
+  55   1      }
+  56          
+  57          void Set_Column_Address(unsigned char a, unsigned char b)
+  58          {
+  59   1        oled_Command(0x15); // Set Column Address
+  60   1        oled_Data(a);       //   Default => 0x00
+  61   1        oled_Data(b);       //   Default => 0x77
+  62   1      }
+  63          
+  64          void Set_Row_Address(unsigned char a, unsigned char b)
+  65          {
+  66   1        oled_Command(0x75); // Set Row Address
+  67   1        oled_Data(a);       //   Default => 0x00
+  68   1        oled_Data(b);       //   Default => 0x7F
+  69   1      }
+  70          void Set_Display_Offset(unsigned char d)
+  71          {
+  72   1        oled_Command(0xA2);     // Set Vertical Scroll by Row
+  73   1        oled_Data(d);       //   Default => 0x00
+  74   1      }
+  75          void Set_Start_Line(unsigned char d)
+  76          {
+  77   1        oled_Command(0xA1);     // Set Vertical Scroll by RAM
+  78   1        oled_Data(d);       //   Default => 0x00
+  79   1      }
+  80          void Set_Remap_Format(unsigned char d)
+  81          {
+  82   1        oled_Command(0xA0); // Set Re-Map / Dual COM Line Mode
+  83   1        oled_Data(d);       // Default => 0x40
+  84   1                  //     Horizontal Address Increment
+  85   1                  //     Column Address 0 Mapped to SEG0
+  86   1                  //     Disable Nibble Remap
+  87   1                  //     Scan from COM0 to COM[N-1]
+  88   1                  //     Disable COM Split Odd Even
+  89   1        oled_Data(0x11); //   Default => 0x01 (Disable Dual COM Mode)
+  90   1      }
+  91          void Set_Contrast_Current(unsigned char d)
+  92          {
+  93   1        oled_Command(0xC1);     // Set Contrast Current
+  94   1        oled_Data(d);       //   Default => 0x7F
+  95   1      }
+  96          void Set_Master_Contrast_Current_Control(unsigned char d)
+  97          {
+  98   1        oled_Command(0xC7);     // Master Contrast Current Control
+  99   1        oled_Data(d);       //   Default => 0x0f (Maximum)
+ 100   1      }
+ 101          void Set_Linear_Gray_Scale_Table()
+ 102          {
+ 103   1        oled_Command(0xB9);     // Set Default Linear Gray Scale Table
+ 104   1      }
+ 105          
+ 106          void Set_Phase_Length(unsigned char d)
+ 107          {
+ 108   1        oled_Command(0xB1);     // Phase 1 (Reset) & Phase 2 (Pre-Charge) Period Adjustment
+ 109   1        oled_Data(d);       //   Default => 0x74 (7 Display Clocks [Phase 2] / 9 Display Clocks [Phase 1])
+ 110   1                  //     D[3:0] => Phase 1 Period in 5~31 Display Clocks
+ 111   1                  //     D[7:4] => Phase 2 Period in 3~15 Display Clocks
+ 112   1      }
+ 113          
+ 114          void Set_Display_Enhancement_B(unsigned char d)
+ 115          {
+ 116   1        oled_Command(0xD1);     // Display Enhancement
+C51 COMPILER V9.56.0.0   DISPLAY                                                           06/03/2021 14:52:32 PAGE 3   
+
+ 117   1        oled_Data(d);           // Default => 0xA2
+ 118   1                                // 0x82 (0x00) => Reserved
+ 119   1                                // 0xA2 (0x20) => Normal
+ 120   1        oled_Data(0x20);
+ 121   1      }
+ 122          
+ 123          void Set_Precharge_Voltage(unsigned char d)
+ 124          {
+ 125   1        oled_Command(0xBB);     // Set Pre-Charge Voltage Level
+ 126   1        oled_Data(d);           //   Default => 0x17 (0.50*VCC)
+ 127   1      }
+ 128          
+ 129          void Set_Second_Precharge_Period(unsigned char d)
+ 130          {
+ 131   1        oled_Command(0xB6);     // Set Second Pre-Charge Period
+ 132   1        oled_Data(d);       //   Default => 0x08 (8 Display Clocks)
+ 133   1      }
+ 134          
+ 135          void Set_VCOMH(unsigned char d)
+ 136          {
+ 137   1        oled_Command(0xBE);     // Set COM Deselect Voltage Level
+ 138   1        oled_Data(d);       //   Default => 0x04 (0.80*VCC)
+ 139   1      }
+ 140          
+ 141          void Exit_Partial_Display()
+ 142          {
+ 143   1        oled_Command(0xA9);
+ 144   1      }
+ 145          
+ 146          void Set_Sleep_Mode(unsigned char d)
+ 147          {
+ 148   1        oled_Command(d);
+ 149   1      }
+ 150          
+ 151          
+ 152          void Set_GPIO(unsigned char d)
+ 153          {
+ 154   1        oled_Command(0xB5);     // General Purpose IO
+ 155   1        oled_Data(d);       //   Default => 0x0A (GPIO Pins output Low Level.)
+ 156   1      }
+ 157          void Set_Function_Selection(unsigned char d)
+ 158          {
+ 159   1        oled_Command(0xAB);     // Function Selection
+ 160   1        oled_Data(d);       //   Default => 0x01
+ 161   1                  //     Enable Internal VDD Regulator
+ 162   1      }
+ 163          void Set_Display_Enhancement_A(unsigned char a, unsigned char b)
+ 164          {
+ 165   1        oled_Command(0xB4);     // Display Enhancement
+ 166   1        oled_Data(0xA0|a);      //   Default => 0xA2
+ 167   1                  //     0xA0 (0x00) => Enable External VSL
+ 168   1                  //     0xA2 (0x02) => Enable Internal VSL (Kept VSL Pin N.C.)
+ 169   1        oled_Data(0x05|b);      //   Default => 0xB5
+ 170   1                  //     0xB5 (0xB0) => Normal
+ 171   1                  //     0xFD (0xF8) => Enhance Low Gray Scale Display Quality
+ 172   1      }
+ 173          
+ 174          
+ 175          void Set_Gray_Scale_Table()
+ 176          {
+ 177   1        oled_Command(0xB8);     // Set Gray Scale Table
+ 178   1        oled_Data(0x0C);      //   Gray Scale Level 1
+C51 COMPILER V9.56.0.0   DISPLAY                                                           06/03/2021 14:52:32 PAGE 4   
+
+ 179   1        oled_Data(0x18);      //   Gray Scale Level 2
+ 180   1        oled_Data(0x24);      //   Gray Scale Level 3
+ 181   1        oled_Data(0x30);      //   Gray Scale Level 4
+ 182   1        oled_Data(0x3C);      //   Gray Scale Level 5
+ 183   1        oled_Data(0x48);      //   Gray Scale Level 6
+ 184   1        oled_Data(0x54);      //   Gray Scale Level 7
+ 185   1        oled_Data(0x60);      //   Gray Scale Level 8
+ 186   1        oled_Data(0x6C);      //   Gray Scale Level 9
+ 187   1        oled_Data(0x78);      //   Gray Scale Level 10
+ 188   1        oled_Data(0x84);      //   Gray Scale Level 11
+ 189   1        oled_Data(0x90);      //   Gray Scale Level 12
+ 190   1        oled_Data(0x9C);      //   Gray Scale Level 13
+ 191   1        oled_Data(0xA8);      //   Gray Scale Level 14
+ 192   1        oled_Data(0xB4);      //   Gray Scale Level 15
+ 193   1        oled_Command(0x00);     // Enable Gray Scale Table
+ 194   1      }
+ 195          
+ 196          void writeRAMCommand()
+ 197          {
+ 198   1        oled_Command(0x5C);
+ 199   1      }
+ 200          
+ 201          void clearDisplay(){
+ 202   1        Set_Column_Address(0x1C, 0x77);
+ 203   1        Set_Row_Address(0x00,0x7F);
+ 204   1        writeRAMCommand();
+ 205   1        for(k = 0; k < 119; k++){
+ 206   2          for(m = 0; m < 128; m++){
+ 207   3            oled_Data(0x00);
+ 208   3            oled_Data(0x00);
+ 209   3          }
+ 210   2        }
+ 211   1      }
+ 212          
+ 213          void fillDisplay(){
+ 214   1        Set_Column_Address(0x1C, 0x77);
+ 215   1        Set_Row_Address(0x00,0x7F);
+ 216   1        writeRAMCommand();
+ 217   1        for(k = 0; k < 119; k++){
+ 218   2          for(m = 0; m < 128; m++){
+ 219   3            oled_Data(0xFF);
+ 220   3            oled_Data(0x00);
+ 221   3          }
+ 222   2        }
+ 223   1      }
+ 224          
+ 225          void initDisplay(){ 
+ 226   1        //SFRPAGE = 0x0F;
+ 227   1        RES = 0;
+ 228   1        delay100mS();
+ 229   1        RES = 1;
+ 230   1        delay100mS(); 
+ 231   1        Set_Command_Lock(0x12);
+ 232   1        Set_Display_Mode(0xA4);        // Set Display Mode = OFF
+ 233   1        Set_Font_Clock_Divider(0x91);  // 0x91 = 80FPS; 0xD0 = default / 1100b 
+ 234   1        Set_MUX_Ratio(0x3F);           // 0x3F = 63d = 64MUX (1/64 duty cycle)
+ 235   1        Set_Display_Offset(0x00);      // 0x00 = (default)
+ 236   1        Set_Start_Line(0x00);          // 0x00 = register 00h
+ 237   1        Set_Remap_Format(0x15);        // 0x14 = Default except Enable Nibble Re-map, Scan from COM[N-1] to COM0, w
+             -here N is the Multiplex ratio
+ 238   1        Set_GPIO(0x00);                // disable IO input
+ 239   1        Set_Function_Selection(0x01);  // function select
+C51 COMPILER V9.56.0.0   DISPLAY                                                           06/03/2021 14:52:32 PAGE 5   
+
+ 240   1        Set_Contrast_Current(0x7F);    // 0x7F = (default)
+ 241   1        Set_Master_Contrast_Current_Control(0x0F); // 0x0F = (default)
+ 242   1        Set_Linear_Gray_Scale_Table();
+ 243   1        Set_Phase_Length(0xE8);             // 0xE2 = Phase 1 period (reset phase length) = 5 DCLKs,
+ 244   1        Set_Display_Enhancement_B(0xA2);    // 0xA2 = Normal (default); 0x82 = reserved
+ 245   1        Set_Precharge_Voltage(0x1F);        // 0x17 = default; 0x1F = 0.60*Vcc (spec example)
+ 246   1        Set_Second_Precharge_Period(0x08);  // 0x08 = 8 dclks (default)
+ 247   1        Set_VCOMH(0x07);                    // 0x04 = 0.80*Vcc (default); 0x07 = 0.86*Vcc (spec example)
+ 248   1        Exit_Partial_Display();
+ 249   1        Set_Display_Mode(0xA6);             // Set Display Mode = Normal Display
+ 250   1        delay1mS();
+ 251   1        Set_Sleep_Mode(0xAF);               // Set Sleep mode OFF (Display ON)
+ 252   1        delay100mS();
+ 253   1        delay100mS();
+ 254   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    688    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

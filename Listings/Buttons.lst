@@ -1,0 +1,619 @@
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE BUTTONS
+OBJECT MODULE PLACED IN .\Objects\Buttons.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE Buttons.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.
+                    -\Listings\Buttons.lst) TABS(2) OBJECT(.\Objects\Buttons.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          #include <DeviceParameters.h>
+   3          #include <Menu.h>
+   4          #include <Delays.h>
+   5          #include <Sound.h>
+   6          #include <UART0.h>
+   7          #include <math.h>
+   8          #include <stdlib.h>
+   9          #include <stdio.h>
+  10          #include <string.h>
+  11          sbit A8 = P5^0;
+  12          sbit A9 = P5^1;
+  13          sbit A10 = P5^2;
+  14          
+  15          sbit P_0 = P6^0;
+  16          sbit P_1 = P6^1;
+  17          sbit P_2 = P6^2;
+  18          sbit P_3 = P6^3;
+  19          
+  20          unsigned char inut_P0_value = 0;
+  21          unsigned char inut_P1_value = 0;
+  22          unsigned char inut_P2_value = 0;
+  23          unsigned char inut_P3_value = 0;
+  24          unsigned char A10_value = 0;
+  25          
+  26          xdata unsigned int timePressFunctionButton = 0;
+  27          
+  28          xdata unsigned char ENERGY_str[4] = {0};
+  29          xdata unsigned char LAMP_FREQUENCY_str[4] = {0};
+  30          xdata unsigned char DELAY1_str[7] = {0};
+  31          xdata unsigned char DELAY2_str[7] = {0};
+  32          
+  33          void buttonDisplay(){
+  34   1        
+  35   1        switch(INDEX_MENU){
+  36   2          case 13:INDEX_MENU = 11;break;
+  37   2          case 26:INDEX_MENU = 21;break;
+  38   2          case 31:INDEX_MENU = 40;break;
+  39   2          case 32:INDEX_MENU = 50;break;
+  40   2          case 33:INDEX_MENU = 60;break;
+  41   2          case 421:OPERATION_TIME = 0;break;
+  42   2          case 422:FLASH_NUMBER = 0;break;
+  43   2          case 45:INDEX_MENU = 40;break;
+  44   2          case 54:INDEX_MENU = 50;break;
+  45   2          case 62:INDEX_MENU = 60;break;
+  46   2          default:INDEX_MENU++;break;
+  47   2        }
+  48   1        
+  49   1      }
+  50          void buttonLeft(){
+  51   1        switch(INDEX_MENU){
+  52   2          case 10:INDEX_MENU -= 0; break;
+  53   2          case 11:ENERGY--;           
+  54   2                    
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 2   
+
+  55   2                  if(ENERGY < EMIN)
+  56   2                    ENERGY = EMIN;
+  57   2                  /*
+  58   2                  ENERGY_str = malloc((int)(sizeof(char) * (ceil(log10(ENERGY))+1)));
+  59   2                  */
+  60   2                  sprintf(ENERGY_str, "%d", ENERGY);
+  61   2                  
+  62   2                  SFRPAGE = 0x0F;
+  63   2                  UART0_sendData("ENERGY=",7);
+  64   2                  UART0_sendData(ENERGY_str,3);
+  65   2                  UART0_TX_sendByte(0x0D);
+  66   2                  SFRPAGE = 0x0F;
+  67   2                  
+  68   2                  //free(ENERGY_str);
+  69   2                  memset(ENERGY_str,0,4);
+  70   2                  
+  71   2                  delay10mS();
+  72   2                  delay10mS();
+  73   2                  delay10mS();
+  74   2                  
+  75   2                  break;
+  76   2          case 20:INDEX_MENU -= 10; break;
+  77   2          case 21:LAMP_FREQUENCY--;
+  78   2                  
+  79   2                  if(LAMP_FREQUENCY < LAMP_FREQ_MIN){
+  80   3                     LAMP_FREQUENCY = LAMP_FREQ_MIN;
+  81   3                  }
+  82   2                  /*
+  83   2                  LAMP_FREQUENCY_str = malloc((int)(sizeof(char) * (ceil(log10(LAMP_FREQUENCY))+1)));
+  84   2                  */
+  85   2                  sprintf(LAMP_FREQUENCY_str, "%d", LAMP_FREQUENCY);
+  86   2                  
+  87   2                  SFRPAGE = 0x0F;
+  88   2                  UART0_sendData("LAMP_FREQUENCY=",15);
+  89   2                  UART0_sendData(LAMP_FREQUENCY_str,3);
+  90   2                  UART0_TX_sendByte(0x0D);
+  91   2                  SFRPAGE = 0x0F;
+  92   2                  
+  93   2                  //free(LAMP_FREQUENCY_str);
+  94   2                  memset(LAMP_FREQUENCY_str,0,4);
+  95   2                  
+  96   2                  QSW_SHOTS = 1;
+  97   2                  delay10mS();
+  98   2                  delay10mS();
+  99   2                  break;
+ 100   2          case 22:index_prr--;
+ 101   2                  if(index_prr < 0)
+ 102   2                    index_prr = 0;
+ 103   2                  QSW_F01 = output_prr_arr[index_prr];
+ 104   2                  QSW_S01 = LAMP_FREQUENCY*10/QSW_F01;
+ 105   2                  QSW_SHOTS = 1;
+ 106   2                  delay10mS();
+ 107   2                  break;
+ 108   2          case 23:if(QSW_SHOTS > 1){
+ 109   3                    QSW_SHOTS--;
+ 110   3                  }
+ 111   2                  break;
+ 112   2          case 24:DELAY1-=1000;
+ 113   2                  
+ 114   2                  if(DELAY1 < DELAY1_MIN){
+ 115   3                     DELAY1 = DELAY1_MIN;
+ 116   3                  }
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 3   
+
+ 117   2                  /*
+ 118   2                  DELAY1_str = malloc((int)(sizeof(char) * (ceil(log10(DELAY1))+1)));
+ 119   2                  */
+ 120   2                  sprintf(DELAY1_str, "%Lu", DELAY1);             
+ 121   2                  SFRPAGE = 0x0F;
+ 122   2                  UART0_sendData("DELAY1=",7);
+ 123   2                  UART0_sendData(DELAY1_str,7);
+ 124   2                  UART0_TX_sendByte(0x0D);
+ 125   2                  SFRPAGE = 0x0F;
+ 126   2                  
+ 127   2                  //free(DELAY1_str);
+ 128   2                  memset(DELAY1_str,0,7);
+ 129   2                  
+ 130   2                  break;
+ 131   2          case 25:DELAY2-=1000;
+ 132   2                  if(DELAY2 < DELAY2_MIN){
+ 133   3                     DELAY2 = DELAY2_MIN;
+ 134   3                  }
+ 135   2                  sprintf(DELAY2_str, "%Lu", DELAY2);             
+ 136   2                  SFRPAGE = 0x0F;
+ 137   2                  UART0_sendData("DELAY2=",7);
+ 138   2                  UART0_sendData(DELAY2_str,7);
+ 139   2                  UART0_TX_sendByte(0x0D);
+ 140   2                  SFRPAGE = 0x0F;
+ 141   2                  memset(DELAY2_str,0,7);
+ 142   2                  break;
+ 143   2          case 26:if(SIMMER_TIME > 0)
+ 144   2                    SIMMER_TIME--;
+ 145   2                  break;
+ 146   2          case 31:break;
+ 147   2          case 32:INDEX_MENU--;break;
+ 148   2          case 33:INDEX_MENU--;break;
+ 149   2          case 42:INDEX_MENU = 421;break;
+ 150   2          case 421:INDEX_MENU++;break;
+ 151   2          case 422:INDEX_MENU = 42;break;
+ 152   2          case 43:if(ENERGY_MAX > EMIN){
+ 153   3                    ENERGY_MAX--;
+ 154   3                    if(ENERGY > ENERGY_MAX){
+ 155   4                      ENERGY = ENERGY_MAX;
+ 156   4                    }
+ 157   3                  }
+ 158   2                  break;
+ 159   2          case 44:if(LAMP_FREQ_MAX > FMIN){
+ 160   3                    LAMP_FREQ_MAX--;
+ 161   3                    if(LAMP_FREQUENCY > LAMP_FREQ_MAX){
+ 162   4                      LAMP_FREQUENCY = LAMP_FREQ_MAX;
+ 163   4                      QSW_SHOTS = 1;
+ 164   4                    }
+ 165   3                  }
+ 166   2                  break;
+ 167   2          case 45:if(ENERGY_RAD1_MAX > 0){
+ 168   3                    ENERGY_RAD1_MAX--;
+ 169   3                  }
+ 170   2                  break;  
+ 171   2          case 51:MESSAGE_SOUND_MODE--;
+ 172   2                  if(MESSAGE_SOUND_MODE < 1){
+ 173   3                    MESSAGE_SOUND_MODE = 12;
+ 174   3                  }
+ 175   2                  delay10mS();
+ 176   2                  break;
+ 177   2          case 52:BUTTON_SOUND_MODE--;
+ 178   2                  if(BUTTON_SOUND_MODE < 1){
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 4   
+
+ 179   3                    BUTTON_SOUND_MODE = 12;
+ 180   3                  }
+ 181   2                  delay10mS();
+ 182   2                  break;
+ 183   2          case 53:DISPLAY_MODE--;
+ 184   2                  if(DISPLAY_MODE < 1){
+ 185   3                    DISPLAY_MODE = 2;
+ 186   3                  }
+ 187   2                  delay10mS();
+ 188   2                  delay10mS();
+ 189   2                  delay10mS();
+ 190   2                  break;
+ 191   2          case 54:ERROR_DISPLAY_MODE--;
+ 192   2                  if(ERROR_DISPLAY_MODE < 1){
+ 193   3                    ERROR_DISPLAY_MODE = 2;
+ 194   3                  }
+ 195   2                  delay10mS();
+ 196   2                  delay10mS();
+ 197   2                  delay10mS();
+ 198   2                  break;
+ 199   2          case 60:break;
+ 200   2          case 61:if(U_PERCENT > 1)
+ 201   2                  {
+ 202   3                    U_PERCENT--;
+ 203   3                  }
+ 204   2                  break;
+ 205   2          case 62:if(PULS_LONGNESS > PULS_LONG_MIN)
+ 206   2                  {
+ 207   3                    PULS_LONGNESS--;
+ 208   3                  }
+ 209   2                  break;
+ 210   2          default:break;
+ 211   2        }
+ 212   1      }
+ 213          void buttonRight(){
+ 214   1        switch(INDEX_MENU){
+ 215   2          case 10:INDEX_MENU += 10;
+ 216   2                  break;
+ 217   2          case 11:ENERGY++;         
+ 218   2          
+ 219   2                  if(ENERGY > ENERGY_MAX){
+ 220   3                     ENERGY = ENERGY_MAX;              
+ 221   3                  }
+ 222   2                  /*
+ 223   2                  ENERGY_str = (char*) malloc((int)(sizeof(char) * (ceil(log10(ENERGY))+1)));
+ 224   2                  */
+ 225   2                  sprintf(ENERGY_str, "%d", ENERGY);
+ 226   2                  
+ 227   2                  SFRPAGE = 0x0F;           
+ 228   2                  UART0_sendData("ENERGY=",7);
+ 229   2                  UART0_sendData(ENERGY_str,3);
+ 230   2                  UART0_TX_sendByte(0x0D);
+ 231   2                  SFRPAGE = 0x0F;
+ 232   2                  
+ 233   2                  //free(ENERGY_str);
+ 234   2                  memset(ENERGY_str,0,4);
+ 235   2                  
+ 236   2                  delay10mS();
+ 237   2                  delay10mS();
+ 238   2                  delay10mS();
+ 239   2                  break;
+ 240   2          case 20:INDEX_MENU += 0;
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 5   
+
+ 241   2                  break;
+ 242   2          case 21:LAMP_FREQUENCY++;
+ 243   2                  
+ 244   2                  if(LAMP_FREQUENCY > LAMP_FREQ_MAX){
+ 245   3                     LAMP_FREQUENCY = LAMP_FREQ_MAX;
+ 246   3                  }
+ 247   2                  /*
+ 248   2                  LAMP_FREQUENCY_str = malloc((int)(sizeof(char) * (ceil(log10(LAMP_FREQUENCY))+1)));
+ 249   2                  */
+ 250   2                  sprintf(LAMP_FREQUENCY_str, "%d", LAMP_FREQUENCY);
+ 251   2                  SFRPAGE = 0x0F;
+ 252   2                  UART0_sendData("LAMP_FREQUENCY=",15);
+ 253   2                  UART0_sendData(LAMP_FREQUENCY_str,3);
+ 254   2                  UART0_TX_sendByte(0x0D);
+ 255   2                  SFRPAGE = 0x0F;
+ 256   2                  //free(LAMP_FREQUENCY_str);
+ 257   2                  memset(LAMP_FREQUENCY_str,0,4);
+ 258   2                  
+ 259   2                  QSW_SHOTS = 1;
+ 260   2                  delay10mS();
+ 261   2                  delay10mS();
+ 262   2                  break;
+ 263   2          case 22:if(index_prr < max_index_prr)
+ 264   2                    index_prr++;
+ 265   2                  if(index_prr > max_index_prr)
+ 266   2                    index_prr = max_index_prr;
+ 267   2                  QSW_F01 = output_prr_arr[index_prr];
+ 268   2                  QSW_S01 = LAMP_FREQUENCY*10/QSW_F01;
+ 269   2                  QSW_SHOTS = 1;
+ 270   2                  delay10mS();
+ 271   2                  break;
+ 272   2          case 23:QSW_S01 = LAMP_FREQUENCY*10/QSW_F01;
+ 273   2                  if(QSW_SHOTS < QSW_S01){
+ 274   3                    QSW_SHOTS++;
+ 275   3                  }
+ 276   2                  break;
+ 277   2          case 24:DELAY1+=1000;
+ 278   2                  
+ 279   2                  if(DELAY1 > DELAY1_MAX){
+ 280   3                     DELAY1 = DELAY1_MAX;
+ 281   3                  }
+ 282   2                  /*
+ 283   2                  DELAY1_str = malloc((int)(sizeof(char) * (ceil(log10(DELAY1))+1)));
+ 284   2                  */
+ 285   2                  sprintf(DELAY1_str, "%Lu", DELAY1);
+ 286   2                  
+ 287   2                  SFRPAGE = 0x0F;
+ 288   2                  UART0_sendData("DELAY1=",7);
+ 289   2                  UART0_sendData(DELAY1_str,7);
+ 290   2                  UART0_TX_sendByte(0x0D);
+ 291   2                  SFRPAGE = 0x0F;
+ 292   2                  
+ 293   2                  //free(DELAY1_str);
+ 294   2                  memset(DELAY1_str,0,7);
+ 295   2                  
+ 296   2                  break;
+ 297   2          case 25:DELAY2+=1000;
+ 298   2                  if(DELAY2 > DELAY2_MAX){
+ 299   3                     DELAY2 = DELAY2_MAX;
+ 300   3                  }
+ 301   2                  sprintf(DELAY2_str, "%Lu", DELAY2);
+ 302   2                  
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 6   
+
+ 303   2                  SFRPAGE = 0x0F;
+ 304   2                  UART0_sendData("DELAY2=",7);
+ 305   2                  UART0_sendData(DELAY2_str,7);
+ 306   2                  UART0_TX_sendByte(0x0D);
+ 307   2                  SFRPAGE = 0x0F;
+ 308   2                  
+ 309   2                  memset(DELAY2_str,0,7);
+ 310   2                  
+ 311   2                  break;
+ 312   2          case 26:if(SIMMER_TIME < 250)
+ 313   2                    SIMMER_TIME++;            
+ 314   2                  break;
+ 315   2          case 31:INDEX_MENU++;break;
+ 316   2          case 32:INDEX_MENU++;break;
+ 317   2          case 33:break;
+ 318   2          case 42:break;
+ 319   2          case 43:if(ENERGY_MAX < EMAX){
+ 320   3                    ENERGY_MAX++;
+ 321   3                  }
+ 322   2                  break;
+ 323   2          case 44:if(LAMP_FREQ_MAX < FMAX){
+ 324   3                    LAMP_FREQ_MAX++;
+ 325   3                  }
+ 326   2                  break;
+ 327   2          case 45:if(ENERGY_RAD1_MAX < RMAX1){
+ 328   3                    ENERGY_RAD1_MAX++;
+ 329   3                  }
+ 330   2                  break;
+ 331   2          case 51:MESSAGE_SOUND_MODE++;
+ 332   2                  if(MESSAGE_SOUND_MODE > 12){
+ 333   3                    MESSAGE_SOUND_MODE = 1;
+ 334   3                  }
+ 335   2                  delay10mS();
+ 336   2                  break;
+ 337   2          case 52:BUTTON_SOUND_MODE++;
+ 338   2                  if(BUTTON_SOUND_MODE > 12){
+ 339   3                    BUTTON_SOUND_MODE = 1;
+ 340   3                  }
+ 341   2                  delay10mS();
+ 342   2                  break;
+ 343   2          case 53:DISPLAY_MODE++;
+ 344   2                  if(DISPLAY_MODE > 2){
+ 345   3                    DISPLAY_MODE = 1;
+ 346   3                  }
+ 347   2                  delay10mS();
+ 348   2                  delay10mS();
+ 349   2                  delay10mS();
+ 350   2                  break;
+ 351   2          case 54:ERROR_DISPLAY_MODE++;
+ 352   2                  if(ERROR_DISPLAY_MODE > 2)
+ 353   2                  {             
+ 354   3                     ERROR_DISPLAY_MODE = 1;              
+ 355   3                  }
+ 356   2                  delay10mS();
+ 357   2                  delay10mS();
+ 358   2                  delay10mS();
+ 359   2                  break;
+ 360   2          case 60:break;
+ 361   2          case 61:if(U_PERCENT < 30)
+ 362   2                  {
+ 363   3                     U_PERCENT++;
+ 364   3                  }
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 7   
+
+ 365   2                  break;
+ 366   2          case 62:if(PULS_LONGNESS < PULS_LONG_MAX)
+ 367   2                  {
+ 368   3                     PULS_LONGNESS++;
+ 369   3                  }
+ 370   2                  break;            
+ 371   2          default:break;
+ 372   2        }
+ 373   1      }
+ 374          void buttonFunction(){  
+ 375   1        switch(INDEX_MENU/10){
+ 376   2          case 1:INDEX_MENU = 11;break;
+ 377   2          case 2:INDEX_MENU = 11;break;
+ 378   2          case 3:INDEX_MENU = 11;break;
+ 379   2          case 4:INDEX_MENU = 31;break;
+ 380   2          case 5:INDEX_MENU = 31;break;
+ 381   2          case 6:INDEX_MENU = 31;break;
+ 382   2          case 42:INDEX_MENU = 31;break;
+ 383   2          default:break;
+ 384   2        }
+ 385   1      }
+ 386          void buttonQsw2(){
+ 387   1        if(QSW2_STATE == 0x30)QSW2_STATE = 0x31;
+ 388   1        else QSW2_STATE = 0x30;
+ 389   1      }
+ 390          void buttonStop(){
+ 391   1        stop_Button_Sound();
+ 392   1        SFRPAGE = 0x0F;
+ 393   1        UART0_sendData("STOP",4);
+ 394   1        UART0_TX_sendByte(0x0D);
+ 395   1        SFRPAGE = 0x0F; 
+ 396   1      }
+ 397          void buttonQsw1(){  
+ 398   1      
+ 399   1        if(QSW1_STATE == 0x00){
+ 400   2          QSW1_STATE = 0x01;
+ 401   2          
+ 402   2          SFRPAGE = 0x0F;
+ 403   2          UART0_sendData("QSW1_STATE=1",11);
+ 404   2          UART0_TX_sendByte(0x0D);
+ 405   2          SFRPAGE = 0x0F;
+ 406   2        }
+ 407   1        else {
+ 408   2          QSW1_STATE = 0x00;
+ 409   2          
+ 410   2          SFRPAGE = 0x0F;
+ 411   2          UART0_sendData("QSW1_STATE=0",11);
+ 412   2          UART0_TX_sendByte(0x0D);
+ 413   2          SFRPAGE = 0x0F;
+ 414   2        }
+ 415   1      }
+ 416          void buttonLamp(){
+ 417   1          switch(LAMP_STATE){
+ 418   2            case 0x00:
+ 419   2                SFRPAGE = 0x0F;
+ 420   2                UART0_sendData("START",5);
+ 421   2                UART0_TX_sendByte(0x0D);
+ 422   2                SFRPAGE = 0x0F;
+ 423   2                break;
+ 424   2            case 0x01:
+ 425   2                SFRPAGE = 0x0F;
+ 426   2                UART0_sendData("START",5);
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 8   
+
+ 427   2                UART0_TX_sendByte(0x0D);
+ 428   2                SFRPAGE = 0x0F; 
+ 429   2                break;
+ 430   2            case 0x03:
+ 431   2                SFRPAGE = 0x0F;
+ 432   2                UART0_sendData("LAMP_STATE=1",12);
+ 433   2                UART0_TX_sendByte(0x0D);
+ 434   2                SFRPAGE = 0x0F; 
+ 435   2                break;
+ 436   2            default:break;
+ 437   2          }
+ 438   1        
+ 439   1      }
+ 440          void buttonQswMode(){
+ 441   1        if(QSW_OPTION < 0x04)QSW_OPTION++;
+ 442   1        else QSW_OPTION = 0x00;
+ 443   1      
+ 444   1        SFRPAGE = 0x0F;
+ 445   1        UART0_sendData("QSW_OPTION=",11);
+ 446   1        UART0_TX_sendByte(QSW_OPTION + 0x30);
+ 447   1        delay100mkS();
+ 448   1        UART0_TX_sendByte(0x0D);
+ 449   1        SFRPAGE = 0x0F;
+ 450   1      }
+ 451          void buttonShutter1(){  
+ 452   1          
+ 453   1        if(SHUTTER1_STATE == 0x00){
+ 454   2          
+ 455   2          SHUTTER1_STATE = 0x01;
+ 456   2          
+ 457   2          SFRPAGE = 0x0F;
+ 458   2          UART0_sendData("SHUTTER1_STATE=1",15);
+ 459   2          UART0_TX_sendByte(0x0D);
+ 460   2          SFRPAGE = 0x0F;
+ 461   2        }else {
+ 462   2          
+ 463   2          SHUTTER1_STATE = 0x00;
+ 464   2          
+ 465   2          SFRPAGE = 0x0F;
+ 466   2          UART0_sendData("SHUTTER1_STATE=0",15);
+ 467   2          UART0_TX_sendByte(0x0D);
+ 468   2          SFRPAGE = 0x0F;
+ 469   2        } 
+ 470   1      }
+ 471          void buttonShutter2(){
+ 472   1        if(SHUTTER2_STATE == 0x30)SHUTTER2_STATE = 0x31;
+ 473   1        else SHUTTER2_STATE = 0x30;
+ 474   1      }
+ 475          void buttonLampMode(){  
+ 476   1        if(LAMP_OPTION < 0x03)
+ 477   1          LAMP_OPTION++;
+ 478   1        else 
+ 479   1          LAMP_OPTION = 0x01;
+ 480   1        
+ 481   1        SFRPAGE = 0x0F;
+ 482   1        UART0_sendData("LAMP_OPTION=",12);
+ 483   1        UART0_TX_sendByte(LAMP_OPTION + 0x30);
+ 484   1        delay100mkS();
+ 485   1        UART0_TX_sendByte(0x0D);
+ 486   1        SFRPAGE = 0x0F;
+ 487   1      }
+ 488          
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 9   
+
+ 489          void longPressFunctionButton(){
+ 490   1          INDEX_MENU = 31;    
+ 491   1      }
+ 492          void checkPressButton(){
+ 493   1        SFRPAGE = 0x0F; 
+ 494   1        A8 = 0;
+ 495   1        A9 = 1;
+ 496   1        A10 = 1;
+ 497   1        if(P_0 == 0){
+ 498   2          buttonDisplay();
+ 499   2          button_Sound();
+ 500   2          delay100mS();   
+ 501   2        }
+ 502   1        if(P_1 == 0){     
+ 503   2          buttonLeft();
+ 504   2          button_Sound();           
+ 505   2        }
+ 506   1        if(P_2 == 0){   
+ 507   2          buttonRight();
+ 508   2          button_Sound(); 
+ 509   2        }
+ 510   1        if(P_3 == 0){
+ 511   2          buttonFunction();
+ 512   2          button_Sound();
+ 513   2          delay100mS();   
+ 514   2          timePressFunctionButton++;    
+ 515   2          if(timePressFunctionButton == 5){
+ 516   3            longPressFunctionButton();
+ 517   3            timePressFunctionButton = 0;      
+ 518   3          }
+ 519   2        }
+ 520   1        if(P_3 == 1){
+ 521   2          timePressFunctionButton = 0;
+ 522   2        }
+ 523   1        if(P_0 == 0 && P_3 == 0){
+ 524   2          delay100mS(); 
+ 525   2          delay100mS(); 
+ 526   2          INDEX_MENU = 21;
+ 527   2        } 
+ 528   1        A8 = 1;
+ 529   1        A9 = 0;
+ 530   1        A10 = 1;  
+ 531   1        if(P_0 == 0){
+ 532   2          buttonQsw2();
+ 533   2          button_Sound();
+ 534   2          delay100mS();   
+ 535   2        } 
+ 536   1        if(P_1 == 0){
+ 537   2          buttonStop();
+ 538   2          delay100mS();   
+ 539   2        }
+ 540   1        if(P_2 == 0){
+ 541   2          buttonQsw1();
+ 542   2          button_Sound();
+ 543   2          delay100mS();   
+ 544   2        } 
+ 545   1        if(P_3 == 0){
+ 546   2          buttonLamp();
+ 547   2          button_Sound();
+ 548   2          delay100mS();   
+ 549   2        }
+ 550   1        A8 = 1;
+C51 COMPILER V9.56.0.0   BUTTONS                                                           06/03/2021 14:52:32 PAGE 10  
+
+ 551   1        A9 = 1;
+ 552   1        A10 = 0;
+ 553   1        inut_P0_value = P_0;
+ 554   1        if(P_0 == 0){
+ 555   2          buttonQswMode();
+ 556   2          button_Sound();
+ 557   2          delay100mS();   
+ 558   2        }
+ 559   1        inut_P1_value = P_1;
+ 560   1        if(P_1 == 0){   
+ 561   2          buttonShutter1();
+ 562   2          button_Sound();   
+ 563   2          delay100mS();     
+ 564   2        }
+ 565   1        inut_P2_value = P_2;
+ 566   1        if(P_2 == 0){
+ 567   2          buttonShutter2();
+ 568   2          button_Sound();
+ 569   2          delay100mS();     
+ 570   2        }
+ 571   1        inut_P3_value = P_3;
+ 572   1        if(P_3 == 0){
+ 573   2          buttonLampMode();
+ 574   2          button_Sound();
+ 575   2          delay100mS();     
+ 576   2        }
+ 577   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3337    ----
+   CONSTANT SIZE    =    156    ----
+   XDATA SIZE       =     24    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

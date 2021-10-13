@@ -1,0 +1,37 @@
+C51 COMPILER V9.56.0.0   TIMER2                                                            06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE TIMER2
+OBJECT MODULE PLACED IN .\Objects\Timer2.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE Timer2.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\
+                    -Listings\Timer2.lst) TABS(2) OBJECT(.\Objects\Timer2.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          //indication
+   3          void Timer2_Init(){
+   4   1         
+   5   1         SFRPAGE = TMR2_PAGE;
+   6   1         ET2 = 1; 
+   7   1         PT2 = 1;
+   8   1         TMR2CF = 0x00;
+   9   1         TR2 = 1; //Enable and start Timer 2  
+  10   1         RCAP2L = 0x00;
+  11   1         RCAP2H = 0xFF; 
+  12   1          
+  13   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     17    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

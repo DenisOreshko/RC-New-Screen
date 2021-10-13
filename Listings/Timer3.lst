@@ -1,0 +1,66 @@
+C51 COMPILER V9.56.0.0   TIMER3                                                            06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE TIMER3
+OBJECT MODULE PLACED IN .\Objects\Timer3.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE Timer3.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\
+                    -Listings\Timer3.lst) TABS(2) OBJECT(.\Objects\Timer3.obj)
+
+line level    source
+
+   1          #include <C8051F120.h>
+   2          #include <Timer0.h>
+   3          #include <Sound.h>
+   4          
+   5          xdata unsigned short times_sound = 0;
+   6          xdata unsigned short note_delay = 0;
+   7          
+   8          void Interrupts_Timer3_Init(){
+   9   1        EIE2 = 0x01;  
+  10   1        EIP2 = 0x00;
+  11   1      }
+  12          
+  13          void Timer3_Init(){
+  14   1         SFRPAGE   = TMR3_PAGE;
+  15   1         TMR3CF    = 0x18;
+  16   1         RCAP3H    = 0xCF; 
+  17   1         RCAP3L    = 0xCC; //1mS
+  18   1         Interrupts_Timer3_Init();    
+  19   1      }
+  20          
+  21          void Timer3_On(){
+  22   1          SFRPAGE   = TMR3_PAGE;
+  23   1          TR3 = 1;  
+  24   1      }
+  25          void Timer3_Off(){
+  26   1          SFRPAGE   = TMR3_PAGE;
+  27   1          TR3 = 0;  
+  28   1      }
+  29          //SOUND DELAY
+  30          void Timer3_Interrupt(void) interrupt 14{
+  31   1        SFRPAGE   = TMR3_PAGE;
+  32   1        TF3 = 0;
+  33   1        
+  34   1        times_sound++;  
+  35   1        if(times_sound > note_delay)
+  36   1        {
+  37   2          sper++;
+  38   2          times_sound = 0;
+  39   2          Timer3_Off();
+  40   2          Timer0_Off();   
+  41   2        } 
+  42   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    153    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

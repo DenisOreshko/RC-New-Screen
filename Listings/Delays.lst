@@ -1,0 +1,49 @@
+C51 COMPILER V9.56.0.0   DELAYS                                                            06/03/2021 14:52:32 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE DELAYS
+OBJECT MODULE PLACED IN .\Objects\Delays.obj
+COMPILER INVOKED BY: C:\Program Files\Keil\C51\BIN\C51.EXE Delays.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\
+                    -Listings\Delays.lst) TABS(2) OBJECT(.\Objects\Delays.obj)
+
+line level    source
+
+   1          xdata long int del = 0;
+   2          void delay5mkS(){
+   3   1        for(del = 0; del < 6; del++){}
+   4   1      }
+   5          void delay10mkS(){
+   6   1        for(del = 0; del < 10; del++){}
+   7   1      }
+   8          void delay100mkS(){
+   9   1        for(del = 0; del < 106; del++){}
+  10   1      }
+  11          void delay1mS(){
+  12   1        for(del = 0; del < 1060; del++){}
+  13   1      }
+  14          void delay10mS(){
+  15   1        for(del = 0; del < 3600; del++){}
+  16   1      }
+  17          void delay35mS(){
+  18   1        for(del = 0; del < 6340; del++){}
+  19   1      }
+  20          void delay50mS(){
+  21   1        for(del = 0; del < 9600; del++){}
+  22   1      }
+  23          void delay100mS(){
+  24   1        for(del = 0; del < 18500; del++){}
+  25   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    613    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
